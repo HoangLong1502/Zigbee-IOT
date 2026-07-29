@@ -1,0 +1,62 @@
+# ---------------------------------------------------------------------------
+# Zigbee2MQTT configuration
+#
+# This is the bridge between the USB Zigbee coordinator and the MQTT broker.
+# Every device report is published to `zigbee2mqtt/<friendly_name>` and all
+# bridge metadata to `zigbee2mqtt/bridge/#`, which the NestJS backend consumes.
+# ---------------------------------------------------------------------------
+
+homeassistant: false
+
+# Web UI on http://localhost:8080 (optional, the platform has its own UI)
+frontend:
+  port: 8080
+
+permit_join: false
+
+mqtt:
+  base_topic: zigbee2mqtt
+  server: mqtt://mosquitto:1883
+  # When running Zigbee2MQTT natively on Windows use:
+  # server: mqtt://localhost:1883
+  # user: zigbee
+  # password: zigbee
+  include_device_information: true
+
+serial:
+  # Linux / Docker:  /dev/ttyACM0 or /dev/serial/by-id/usb-...
+  # Windows native:  COM3
+  port: /dev/ttyACM0
+  # CC2652P / CC1352P -> zstack ; EFR32MG21 -> ember ; conbee -> deconz
+  adapter: zstack
+  baudrate: 115200
+
+advanced:
+  # Zigbee network parameters. Changing pan_id / network_key forces every
+  # device to re-join, so set these once before pairing devices.
+  pan_id: 0x1a62
+  ext_pan_id: [0xDD, 0xDD, 0xDD, 0xDD, 0xDD, 0xDD, 0xDD, 0xDD]
+  channel: 11
+  network_key: GENERATE
+  transmit_power: 5
+  # Publish availability (online/offline) per device -> used for the
+  # "Online / Offline" state shown in the dashboard.
+  last_seen: ISO_8601
+  log_level: info
+  log_output:
+    - console
+  legacy_api: false
+  legacy_availability_payload: false
+
+availability:
+  active:
+    timeout: 10
+  passive:
+    timeout: 1500
+
+device_options:
+  retain: false
+
+# Devices are appended here automatically as they join the network.
+devices: {}
+groups: {}

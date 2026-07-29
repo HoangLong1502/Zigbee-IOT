@@ -1,0 +1,16 @@
+node_modules/
+dist/
+build/
+coverage/
+.env
+*.log
+.DS_Store
+.idea/
+.vscode/
+
+# Zigbee2MQTT runtime state (keep configuration.yaml)
+docker/zigbee2mqtt/data/*
+!docker/zigbee2mqtt/data/configuration.yaml
+
+# Mosquitto runtime
+docker/mosquitto/config/passwd

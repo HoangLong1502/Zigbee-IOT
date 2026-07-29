@@ -1,0 +1,15 @@
+{
+  "name": "zigbee-iot-monitoring-platform",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Zigbee IoT monitoring platform (Zigbee2MQTT + NestJS + React)",
+  "scripts": {
+    "dev:infra": "docker compose up -d postgres mosquitto",
+    "dev:backend": "npm --prefix backend run start:dev",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "build": "npm --prefix backend run build && npm --prefix frontend run build",
+    "typecheck": "npm --prefix backend run typecheck && npm --prefix frontend run typecheck",
+    "docker:up": "docker compose up -d postgres mosquitto backend frontend",
+    "docker:down": "docker compose down"
+  }
+}

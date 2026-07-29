@@ -1,0 +1,135 @@
+version: '3.9'
+
+# ---------------------------------------------------------------------------
+# Zigbee IoT Monitoring Platform - full stack
+#
+# Zigbee Devices -> USB Coordinator -> Zigbee2MQTT -> Mosquitto
+#                -> NestJS backend -> PostgreSQL / Socket.IO / REST
+#                -> React frontend
+# ---------------------------------------------------------------------------
+
+services:
+  # ----------------------------------------------------------------------
+  # PostgreSQL - stores devices, exposes, telemetry, history, events, logs
+  # ----------------------------------------------------------------------
+  postgres:
+    image: postgres:16-alpine
+    container_name: zigbee-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USERNAME:-zigbee}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-zigbee}
+      POSTGRES_DB: ${DB_DATABASE:-zigbee}
+    ports:
+      - '${DB_PORT:-5432}:5432'
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${DB_USERNAME:-zigbee} -d ${DB_DATABASE:-zigbee}']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks: [zigbee-net]
+
+  # ----------------------------------------------------------------------
+  # Mosquitto - MQTT broker sitting between Zigbee2MQTT and the backend
+  # 1883 = MQTT, 9001 = MQTT over WebSockets
+  # ----------------------------------------------------------------------
+  mosquitto:
+    image: eclipse-mosquitto:2
+    container_name: zigbee-mosquitto
+    restart: unless-stopped
+    ports:
+      - '1883:1883'
+      - '9001:9001'
+    volumes:
+      - ./docker/mosquitto/config:/mosquitto/config
+      - mosquitto-data:/mosquitto/data
+      - mosquitto-log:/mosquitto/log
+    networks: [zigbee-net]
+
+  # ----------------------------------------------------------------------
+  # Zigbee2MQTT - talks to the USB coordinator and publishes to Mosquitto.
+  #
+  # Started only with:  docker compose --profile zigbee up -d
+  #
+  # NOTE (Windows): Docker Desktop cannot pass through a COM port. On Windows
+  # run Zigbee2MQTT natively (see README) and keep this profile disabled.
+  # On Linux set ZIGBEE_ADAPTER=/dev/ttyUSB0 (or /dev/serial/by-id/...).
+  # ----------------------------------------------------------------------
+  zigbee2mqtt:
+    image: koenkk/zigbee2mqtt:latest
+    container_name: zigbee2mqtt
+    restart: unless-stopped
+    profiles: ['zigbee']
+    depends_on:
+      - mosquitto
+    ports:
+      - '8080:8080'
+    volumes:
+      - ./docker/zigbee2mqtt/data:/app/data
+      - /run/udev:/run/udev:ro
+    devices:
+      - '${ZIGBEE_ADAPTER:-/dev/ttyUSB0}:/dev/ttyACM0'
+    environment:
+      TZ: ${TZ:-UTC}
+    networks: [zigbee-net]
+
+  # ----------------------------------------------------------------------
+  # NestJS backend - MQTT ingestion, REST API, WebSocket gateway
+  # ----------------------------------------------------------------------
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: zigbee-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mosquitto:
+        condition: service_started
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USERNAME: ${DB_USERNAME:-zigbee}
+      DB_PASSWORD: ${DB_PASSWORD:-zigbee}
+      DB_DATABASE: ${DB_DATABASE:-zigbee}
+      DB_SYNCHRONIZE: 'true'
+      MQTT_URL: mqtt://mosquitto:1883
+      MQTT_BASE_TOPIC: ${MQTT_BASE_TOPIC:-zigbee2mqtt}
+      MQTT_USERNAME: ${MQTT_USERNAME:-}
+      MQTT_PASSWORD: ${MQTT_PASSWORD:-}
+      JWT_SECRET: ${JWT_SECRET:-change-me-in-production}
+      CORS_ORIGIN: ${CORS_ORIGIN:-*}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@local}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin123}
+    ports:
+      - '3000:3000'
+    networks: [zigbee-net]
+
+  # ----------------------------------------------------------------------
+  # React frontend served by nginx, proxying /api and /socket.io -> backend
+  # ----------------------------------------------------------------------
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: zigbee-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - '8081:80'
+    networks: [zigbee-net]
+
+volumes:
+  postgres-data:
+  mosquitto-data:
+  mosquitto-log:
+
+networks:
+  zigbee-net:
+    driver: bridge
