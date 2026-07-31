@@ -1,7 +1,7 @@
-import { useEffect, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Power, RefreshCw, ShieldCheck } from 'lucide-react';
+import { Power, Radar, RefreshCw, ShieldCheck, Zap } from 'lucide-react';
 import { coordinatorApi, apiErrorMessage } from '@/lib/api';
 import { formatRelative } from '@/lib/utils';
 import {
@@ -27,9 +27,18 @@ interface FormValues {
 
 export function CoordinatorPage() {
   const queryClient = useQueryClient();
+  const [syncSeconds, setSyncSeconds] = useState(120);
+  const [syncMessage, setSyncMessage] = useState<string | null>(null);
+
   const { data, isLoading, error } = useQuery({
     queryKey: ['coordinator'],
     queryFn: coordinatorApi.get,
+  });
+
+  const discoveryQuery = useQuery({
+    queryKey: ['discovery'],
+    queryFn: coordinatorApi.discovery,
+    refetchInterval: 10_000,
   });
 
   const form = useForm<FormValues>({
@@ -59,6 +68,11 @@ export function CoordinatorPage() {
     });
   }, [data, form]);
 
+  const invalidate = () => {
+    void queryClient.invalidateQueries({ queryKey: ['coordinator'] });
+    void queryClient.invalidateQueries({ queryKey: ['discovery'] });
+  };
+
   const save = useMutation({
     mutationFn: (values: FormValues) =>
       coordinatorApi.update({
@@ -71,16 +85,43 @@ export function CoordinatorPage() {
         networkKey: values.networkKey || undefined,
         logLevel: values.logLevel || undefined,
       }),
-    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ['coordinator'] }),
+    onSuccess: invalidate,
   });
 
   const permitJoin = useMutation({
     mutationFn: (value: boolean) => coordinatorApi.permitJoin(value, value ? 254 : undefined),
-    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ['coordinator'] }),
+    onSuccess: invalidate,
   });
 
   const restart = useMutation({
     mutationFn: coordinatorApi.restart,
+  });
+
+  const setMode = useMutation({
+    mutationFn: (mode: 'manual' | 'auto') => coordinatorApi.setDiscoveryMode(mode),
+    onSuccess: () => {
+      setSyncMessage(null);
+      invalidate();
+    },
+    onError: (err) => setSyncMessage(apiErrorMessage(err)),
+  });
+
+  const manualSync = useMutation({
+    mutationFn: () =>
+      coordinatorApi.manualSync({
+        durationSeconds: syncSeconds,
+        interviewPending: true,
+      }),
+    onSuccess: (result) => {
+      const interviewed = (result.interviewed as string[] | undefined)?.length ?? 0;
+      setSyncMessage(
+        `Manual sync started — join open ${result.permitJoinSeconds}s` +
+          (interviewed ? `, re-interviewed ${interviewed} device(s)` : ''),
+      );
+      invalidate();
+      void queryClient.invalidateQueries({ queryKey: ['devices'] });
+    },
+    onError: (err) => setSyncMessage(apiErrorMessage(err)),
   });
 
   if (isLoading) {
@@ -99,6 +140,9 @@ export function CoordinatorPage() {
       />
     );
   }
+
+  const discovery = discoveryQuery.data;
+  const isAuto = discovery?.pairingMode === 'auto' || data.pairingMode === 'auto';
 
   return (
     <div>
@@ -144,9 +188,114 @@ export function CoordinatorPage() {
           }
           tone={data.permitJoin ? 'warning' : 'default'}
         />
-        <StatCard label="Channel" value={data.channel ?? '—'} />
-        <StatCard label="Firmware" value={data.firmwareVersion ?? '—'} hint={data.coordinatorType ?? undefined} />
+        <StatCard
+          label="Pairing mode"
+          value={isAuto ? 'Auto' : 'Manual'}
+          hint={isAuto ? 'Nearby devices auto-join' : 'Sync to open join'}
+          tone={isAuto ? 'accent' : 'default'}
+          icon={<Radar className="h-5 w-5" />}
+        />
+        <StatCard label="Channel" value={data.channel ?? '—'} hint={data.firmwareVersion ?? undefined} />
       </div>
+
+      <Card className="mb-6">
+        <CardHeader
+          title="Device discovery"
+          subtitle="Tu ket noi thiet bi gan (auto) hoac dong bo thu cong (manual sync)"
+        />
+
+        <div className="mb-4 grid gap-3 lg:grid-cols-2">
+          <button
+            type="button"
+            className={`rounded-2xl border p-4 text-left transition ${
+              isAuto
+                ? 'border-accent/50 bg-accent/15'
+                : 'border-white/10 bg-white/[0.02] hover:border-white/20'
+            }`}
+            disabled={setMode.isPending}
+            onClick={() => setMode.mutate('auto')}
+          >
+            <div className="mb-2 flex items-center gap-2">
+              <Zap className="h-4 w-4 text-accent-soft" />
+              <span className="font-medium text-slate-100">Auto-pair (nearby)</span>
+              {isAuto ? <Badge tone="accent">Active</Badge> : null}
+            </div>
+            <p className="text-sm text-slate-400">
+              Keep the Zigbee network open. Devices in pairing mode within radio range
+              join automatically — no extra click needed.
+            </p>
+          </button>
+
+          <button
+            type="button"
+            className={`rounded-2xl border p-4 text-left transition ${
+              !isAuto
+                ? 'border-accent/50 bg-accent/15'
+                : 'border-white/10 bg-white/[0.02] hover:border-white/20'
+            }`}
+            disabled={setMode.isPending}
+            onClick={() => setMode.mutate('manual')}
+          >
+            <div className="mb-2 flex items-center gap-2">
+              <RefreshCw className="h-4 w-4 text-slate-300" />
+              <span className="font-medium text-slate-100">Manual sync</span>
+              {!isAuto ? <Badge>Active</Badge> : null}
+            </div>
+            <p className="text-sm text-slate-400">
+              Safer for a stable network: the join window only opens when you press Sync.
+            </p>
+          </button>
+        </div>
+
+        <div className="flex flex-col gap-3 rounded-2xl border border-white/5 bg-white/[0.02] p-4 sm:flex-row sm:items-end">
+          <label className="block flex-1">
+            <span className="label">Sync window (seconds)</span>
+            <input
+              className="input"
+              type="number"
+              min={1}
+              max={254}
+              value={syncSeconds}
+              onChange={(event) => setSyncSeconds(Number(event.target.value) || 120)}
+            />
+          </label>
+          <button
+            type="button"
+            className="btn-primary"
+            disabled={manualSync.isPending}
+            onClick={() => manualSync.mutate()}
+          >
+            {manualSync.isPending ? <Spinner /> : <Radar className="h-4 w-4" />}
+            Run Manual Sync
+          </button>
+        </div>
+
+        <p className="mt-3 text-xs text-slate-500">
+          Manual Sync opens permit join for the selected duration and re-interviews
+          unfinished devices. Put sensors/plugs into pairing mode while the window is open.
+          {discovery?.pendingInterviewCount
+            ? ` · ${discovery.pendingInterviewCount} device(s) pending interview.`
+            : ''}
+          {discovery?.lastManualSyncAt
+            ? ` · Last sync ${formatRelative(discovery.lastManualSyncAt)}.`
+            : ''}
+        </p>
+
+        {syncMessage ? (
+          <p
+            className={`mt-3 rounded-xl px-3 py-2 text-sm ${
+              manualSync.isError || setMode.isError
+                ? 'bg-danger/10 text-rose-300'
+                : 'bg-success/10 text-emerald-300'
+            }`}
+          >
+            {syncMessage}
+          </p>
+        ) : null}
+        {discovery?.description ? (
+          <p className="mt-2 text-sm text-slate-400">{discovery.description}</p>
+        ) : null}
+      </Card>
 
       <div className="grid gap-6 xl:grid-cols-2">
         <Card>
@@ -163,10 +312,7 @@ export function CoordinatorPage() {
             <Info label="Zigbee2MQTT" value={data.zigbee2mqttVersion ?? '—'} />
             <Info label="Firmware" value={data.firmwareVersion ?? '—'} />
             <Info label="Last seen" value={formatRelative(data.lastSeen)} />
-            <Info
-              label="Restart required"
-              value={data.restartRequired ? 'Yes' : 'No'}
-            />
+            <Info label="Restart required" value={data.restartRequired ? 'Yes' : 'No'} />
           </dl>
         </Card>
 

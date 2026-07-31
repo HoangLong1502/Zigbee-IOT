@@ -17,7 +17,7 @@ import {
   Trash2,
   Wrench,
 } from 'lucide-react';
-import { devicesApi, historyApi, otaApi, apiErrorMessage } from '@/lib/api';
+import { devicesApi, historyApi, otaApi, coordinatorApi, apiErrorMessage } from '@/lib/api';
 import { realtime } from '@/lib/realtime';
 import { WS_EVENTS } from '@/lib/ws-events';
 import {
@@ -29,6 +29,7 @@ import {
 } from '@/lib/utils';
 import type { HistoryRange } from '@/types';
 import { ExposeRenderer } from '@/components/exposes/ExposeRenderer';
+import { DeviceOnOffToggle } from '@/components/devices/DeviceOnOffToggle';
 import {
   Badge,
   Card,
@@ -62,7 +63,14 @@ export function DeviceDetailPage() {
     enabled: Boolean(id),
   });
 
+  const discoveryQuery = useQuery({
+    queryKey: ['discovery'],
+    queryFn: () => coordinatorApi.discovery(),
+    refetchInterval: 15_000,
+  });
+
   const device = deviceQuery.data;
+  const bridgeOnline = discoveryQuery.data?.bridgeOnline ?? true;
 
   useEffect(() => {
     if (!device?.ieeeAddress) return;
@@ -155,6 +163,7 @@ export function DeviceDetailPage() {
         description={`${device.manufacturer ?? 'Unknown'} · ${device.model ?? '—'} · ${device.ieeeAddress}`}
         actions={
           <>
+            <DeviceOnOffToggle device={device} />
             <button
               type="button"
               className="btn-secondary"
@@ -202,6 +211,14 @@ export function DeviceDetailPage() {
           {error ?? message}
         </p>
       )}
+
+      {!bridgeOnline ? (
+        <p className="mb-4 rounded-xl bg-amber-500/10 px-3 py-2 text-sm text-amber-200">
+          Zigbee2MQTT bridge is offline — On/Off and config commands will not reach the device.
+          Start Zigbee2MQTT (Windows: <code className="text-amber-100">zigbee2mqtt-windows/start.bat</code>),
+          then retry.
+        </p>
+      ) : null}
 
       <div className="mb-6 grid gap-4 lg:grid-cols-[280px_1fr]">
         <Card className="flex flex-col items-center text-center">
@@ -276,8 +293,16 @@ export function DeviceDetailPage() {
 
       <Card className="mb-6">
         <CardHeader
-          title="Current Sensor Values"
-          subtitle="Rendered dynamically from Zigbee2MQTT expose metadata"
+          title="Current values"
+          subtitle="Sensors and controls from Zigbee2MQTT expose metadata"
+          action={
+            <Link
+              to="/coordinator"
+              className="text-xs text-slate-400 hover:text-white"
+            >
+              Bridge status
+            </Link>
+          }
         />
         <ExposeRenderer
           exposes={exposes}
