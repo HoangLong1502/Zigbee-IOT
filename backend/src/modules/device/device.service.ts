@@ -68,6 +68,21 @@ export class DeviceService implements OnModuleInit {
 
   async onModuleInit(): Promise<void> {
     await this.reloadCache();
+    await this.refreshExposesFromStoredRaw();
+  }
+
+  /** Re-flatten exposes from stored Zigbee2MQTT definitions (adds group keys, etc.). */
+  private async refreshExposesFromStoredRaw(): Promise<void> {
+    const devices = await this.devices.find();
+    let refreshed = 0;
+    for (const device of devices) {
+      if (!device.exposesRaw?.length) continue;
+      await this.replaceExposes(device, device.exposesRaw);
+      refreshed += 1;
+    }
+    if (refreshed > 0) {
+      this.logger.log(`Refreshed expose metadata for ${refreshed} device(s)`);
+    }
   }
 
   private async reloadCache(): Promise<void> {
@@ -202,8 +217,23 @@ export class DeviceService implements OnModuleInit {
    * rows, which is what lets the frontend render an unknown device correctly.
    */
   private async syncExposes(device: Device, entry: ZigbeeBridgeDevice): Promise<void> {
-    const flat = flattenExposes(entry.definition?.exposes ?? []);
+    await this.replaceExposes(device, entry.definition?.exposes ?? []);
+  }
+
+  private async replaceExposes(
+    device: Device,
+    raw: NonNullable<Device['exposesRaw']>,
+  ): Promise<void> {
+    const flat = flattenExposes(raw);
     if (flat.length === 0) return;
+
+    // Replace-all keeps the table free of historical NULL-endpoint duplicates
+    // (Postgres UNIQUE treats NULLs as distinct).
+    await this.exposes
+      .createQueryBuilder()
+      .delete()
+      .where('deviceId = :deviceId', { deviceId: device.id })
+      .execute();
 
     const rows = flat.map((expose) =>
       this.exposes.create({
@@ -213,7 +243,10 @@ export class DeviceService implements OnModuleInit {
         label: expose.label,
         type: expose.type,
         parentType: expose.parentType,
-        endpoint: expose.endpoint,
+        groupKey: expose.groupKey,
+        groupLabel: expose.groupLabel,
+        groupDescription: expose.groupDescription,
+        endpoint: expose.endpoint || '',
         access: expose.access,
         unit: expose.unit,
         description: expose.description,
@@ -229,22 +262,7 @@ export class DeviceService implements OnModuleInit {
       }),
     );
 
-    // Upsert keeps expose ids stable across re-interviews.
-    // Cast: TypeORM DeepPartial rejects jsonb `unknown` columns.
-    await this.exposes.upsert(rows as never, {
-      conflictPaths: ['deviceId', 'property', 'endpoint'],
-      skipUpdateIfNoValuesChanged: true,
-    });
-
-    // Drop exposes that the device no longer reports (e.g. after a firmware
-    // update changed the definition).
-    const keep = rows.map((row) => row.property);
-    await this.exposes
-      .createQueryBuilder()
-      .delete()
-      .where('deviceId = :deviceId', { deviceId: device.id })
-      .andWhere('property NOT IN (:...keep)', { keep })
-      .execute();
+    await this.exposes.insert(rows as never);
   }
 
   // -------------------------------------------------------------------------

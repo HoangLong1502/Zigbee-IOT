@@ -189,18 +189,47 @@ export class DeviceController {
 
     // Guard against writing properties the device does not accept: the expose
     // metadata is the single source of truth for what is settable.
+    const flat = flattenExposes(device.exposesRaw);
+    const byProperty = new Map(flat.map((expose) => [expose.property, expose]));
     const settable = new Set(
-      flattenExposes(device.exposesRaw)
-        .filter((expose) => isSettable(expose.access))
-        .map((expose) => expose.property),
+      flat.filter((expose) => isSettable(expose.access)).map((expose) => expose.property),
     );
     const rejected = Object.keys(dto.payload).filter((key) => !settable.has(key));
 
     const accepted = Object.fromEntries(
       Object.entries(dto.payload).filter(([key]) => settable.has(key)),
     );
-    if (Object.keys(accepted).length > 0) {
-      await this.commands.setState(device.friendlyName, accepted);
+
+    // Composite features (overload_protection, inching_control_set, …) must be
+    // published nested under their group key — Z2M rejects flat keys for those.
+    const mqttPayload: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(accepted)) {
+      const expose = byProperty.get(key);
+      if (expose?.groupKey) {
+        const existingGroup =
+          device.lastPayload &&
+          typeof device.lastPayload[expose.groupKey] === 'object' &&
+          device.lastPayload[expose.groupKey] !== null &&
+          !Array.isArray(device.lastPayload[expose.groupKey])
+            ? (device.lastPayload[expose.groupKey] as Record<string, unknown>)
+            : {};
+        const pending =
+          typeof mqttPayload[expose.groupKey] === 'object' &&
+          mqttPayload[expose.groupKey] !== null
+            ? (mqttPayload[expose.groupKey] as Record<string, unknown>)
+            : {};
+        mqttPayload[expose.groupKey] = {
+          ...existingGroup,
+          ...pending,
+          [key]: value,
+        };
+      } else {
+        mqttPayload[key] = value;
+      }
+    }
+
+    if (Object.keys(mqttPayload).length > 0) {
+      await this.commands.setState(device.friendlyName, mqttPayload);
     }
 
     return { accepted: Object.keys(accepted), rejected };
