@@ -5,6 +5,7 @@ import { Search } from 'lucide-react';
 import { devicesApi } from '@/lib/api';
 import { batteryColor, formatRelative, linkQualityInfo } from '@/lib/utils';
 import { Badge, EmptyState, PageHeader, Spinner } from '@/components/ui/Card';
+import { DeviceOnOffToggle } from '@/components/devices/DeviceOnOffToggle';
 
 export function DevicesPage() {
   const [search, setSearch] = useState('');
@@ -130,6 +131,7 @@ export function DevicesPage() {
                         <span className={lqi.color}>LQI {device.linkQuality ?? '—'}</span>
                       </Badge>
                     </div>
+                    <DeviceOnOffToggle device={device} size="sm" className="mt-3" />
                   </div>
                 </div>
                 <p className="mt-3 truncate font-mono text-[11px] text-slate-500">

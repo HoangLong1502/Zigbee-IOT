@@ -129,6 +129,27 @@ export const coordinatorApi = {
     api.post('/coordinator/permit-join', { value, time }).then((r) => r.data),
   restart: () => api.post('/coordinator/restart').then((r) => r.data),
   health: () => api.get('/coordinator/health').then((r) => r.data),
+  discovery: () =>
+    api
+      .get<{
+        pairingMode: 'manual' | 'auto';
+        autoPairEnabled: boolean;
+        autoPairWindowSeconds: number;
+        permitJoin: boolean;
+        permitJoinTimeout: number | null;
+        lastManualSyncAt: string | null;
+        bridgeOnline: boolean;
+        mqttConnected: boolean;
+        pendingInterviewCount: number;
+        description: string;
+      }>('/coordinator/discovery')
+      .then((r) => r.data),
+  setDiscoveryMode: (mode: 'manual' | 'auto', windowSeconds?: number) =>
+    api
+      .post('/coordinator/discovery/mode', { mode, windowSeconds })
+      .then((r) => r.data),
+  manualSync: (body?: { durationSeconds?: number; interviewPending?: boolean }) =>
+    api.post('/coordinator/discovery/sync', body ?? {}).then((r) => r.data),
 };
 
 export const mqttApi = {

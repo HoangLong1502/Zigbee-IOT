@@ -44,6 +44,7 @@ export function useRealtimeBridge(): { connected: boolean } {
       }),
       realtime.on(WS_EVENTS.COORDINATOR_UPDATED, () => {
         void queryClient.invalidateQueries({ queryKey: ['coordinator'] });
+        void queryClient.invalidateQueries({ queryKey: ['discovery'] });
         void queryClient.invalidateQueries({ queryKey: ['dashboard'] });
       }),
       realtime.on(WS_EVENTS.MQTT_STATUS, (payload) => {

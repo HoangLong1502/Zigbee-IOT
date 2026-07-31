@@ -68,6 +68,9 @@ export interface DeviceExpose {
   label: string | null;
   type: string;
   parentType: string | null;
+  groupKey?: string | null;
+  groupLabel?: string | null;
+  groupDescription?: string | null;
   endpoint: string | null;
   access: number;
   unit: string | null;
@@ -131,6 +134,9 @@ export interface Coordinator {
   convertersVersion: string | null;
   logLevel: string | null;
   restartRequired: boolean;
+  pairingMode: 'manual' | 'auto';
+  autoPairWindowSeconds: number;
+  lastManualSyncAt: string | null;
   lastSeen: string | null;
   detectedPorts: DetectedSerialPort[];
   detectionAvailable: boolean;
