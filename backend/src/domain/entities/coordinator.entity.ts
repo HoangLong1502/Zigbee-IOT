@@ -116,6 +116,26 @@ export class Coordinator {
   @Column({ type: 'boolean', default: false })
   restartRequired: boolean;
 
+  /**
+   * Pairing / discovery mode for nearby Zigbee devices.
+   * - `manual`: join window only opens when the user triggers Manual Sync / Permit Join
+   * - `auto`: backend keeps permit join open so devices in pairing range can join alone
+   */
+  @ApiProperty({ enum: ['manual', 'auto'], default: 'manual' })
+  @Column({ type: 'varchar', length: 16, default: 'manual' })
+  pairingMode: 'manual' | 'auto';
+
+  @ApiProperty({
+    description: 'Seconds for each auto-renewed permit-join window (Zigbee max is 254)',
+    default: 254,
+  })
+  @Column({ type: 'int', default: 254 })
+  autoPairWindowSeconds: number;
+
+  @ApiProperty({ nullable: true, description: 'When the last manual sync was started' })
+  @Column({ type: 'timestamptz', nullable: true })
+  lastManualSyncAt: Date | null;
+
   @ApiProperty({ nullable: true })
   @Column({ type: 'timestamptz', nullable: true })
   lastSeen: Date | null;

@@ -17,7 +17,11 @@ export interface FlatExpose {
   label: string | null;
   type: string;
   parentType: string | null;
-  endpoint: string | null;
+  /** Composite parent key so the UI can render related features as one card. */
+  groupKey: string | null;
+  groupLabel: string | null;
+  groupDescription: string | null;
+  endpoint: string;
   access: number;
   unit: string | null;
   description: string | null;
@@ -30,6 +34,12 @@ export interface FlatExpose {
   valueOff: unknown;
   valueToggle: unknown;
   raw: ZigbeeExpose;
+}
+
+interface ExposeGroup {
+  key: string;
+  label: string;
+  description: string | null;
 }
 
 /** Expose types that group other exposes instead of carrying a value. */
@@ -56,10 +66,15 @@ const asString = (value: unknown): string | null =>
  * ones (light/switch/climate/...). A multi-gang plug additionally suffixes the
  * property with the endpoint, e.g. `state_l1`. Both cases are handled here so
  * that callers only ever deal with a flat list.
+ *
+ * Composite parents also stamp `groupKey` / `groupLabel` so the UI can keep
+ * related settings (e.g. inching_control + inching_mode + inching_time) in one
+ * card instead of looking like duplicates.
  */
 export function flattenExposes(
   exposes: ZigbeeExpose[] | null | undefined,
   parentType: string | null = null,
+  group: ExposeGroup | null = null,
 ): FlatExpose[] {
   if (!Array.isArray(exposes)) return [];
 
@@ -72,16 +87,31 @@ export function flattenExposes(
     const hasFeatures = Array.isArray(expose.features) && expose.features.length > 0;
 
     // A grouping expose contributes no property of its own - recurse into it.
-    // `endpoint` on a grouping node applies to all of its features.
     if (hasFeatures && (GROUPING_TYPES.has(type) || !expose.property)) {
-      result.push(...flattenExposes(expose.features, type));
+      // Only `composite` becomes a UI group. light/switch stay flat so primary
+      // controls (state, brightness) remain first-class cards.
+      const nextGroup: ExposeGroup | null =
+        type === 'composite'
+          ? {
+              key: String(
+                expose.property ?? expose.name ?? expose.label ?? 'composite',
+              ),
+              label:
+                asString(expose.label) ??
+                asString(expose.name) ??
+                'Settings',
+              description: asString(expose.description),
+            }
+          : group;
+
+      result.push(...flattenExposes(expose.features, type, nextGroup));
       continue;
     }
 
     if (!expose.property) continue;
 
-    // `endpoint` is exposed by Zigbee2MQTT for multi-endpoint devices.
-    const endpoint = asString((expose as Record<string, unknown>).endpoint);
+    // Always store '' (never null): Postgres UNIQUE treats NULLs as distinct.
+    const endpoint = asString((expose as Record<string, unknown>).endpoint) ?? '';
 
     result.push({
       property: String(expose.property),
@@ -89,6 +119,9 @@ export function flattenExposes(
       label: asString(expose.label),
       type,
       parentType,
+      groupKey: group?.key ?? null,
+      groupLabel: group?.label ?? null,
+      groupDescription: group?.description ?? null,
       endpoint,
       access: typeof expose.access === 'number' ? expose.access : ACCESS_PUBLISHED,
       unit: asString(expose.unit),
@@ -106,10 +139,14 @@ export function flattenExposes(
   }
 
   // De-duplicate on property+endpoint: some definitions repeat a property
-  // across endpoints of the same composite.
+  // inside nested composites (e.g. voltage protection features listed twice).
   const seen = new Map<string, FlatExpose>();
   for (const item of result) {
-    seen.set(`${item.property}::${item.endpoint ?? ''}`, item);
+    const key = `${item.property}::${item.endpoint || ''}`;
+    const existing = seen.get(key);
+    if (!existing || (item.access ?? 0) >= (existing.access ?? 0)) {
+      seen.set(key, item);
+    }
   }
   return [...seen.values()];
 }

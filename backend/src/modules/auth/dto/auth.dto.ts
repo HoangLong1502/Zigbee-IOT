@@ -3,8 +3,9 @@ import { IsEmail, IsEnum, IsOptional, IsString, MinLength } from 'class-validato
 import { RoleName } from '../../../domain/entities';
 
 export class LoginDto {
-  @ApiProperty({ example: 'admin@local' })
-  @IsEmail()
+  @ApiProperty({ example: 'admin@example.com' })
+  // require_tld: false allows local/dev addresses like admin@local
+  @IsEmail({ require_tld: false })
   email: string;
 
   @ApiProperty({ example: 'admin123', minLength: 6 })
@@ -14,8 +15,8 @@ export class LoginDto {
 }
 
 export class RegisterDto {
-  @ApiProperty({ example: 'operator@local' })
-  @IsEmail()
+  @ApiProperty({ example: 'operator@example.com' })
+  @IsEmail({ require_tld: false })
   email: string;
 
   @ApiProperty({ minLength: 6 })

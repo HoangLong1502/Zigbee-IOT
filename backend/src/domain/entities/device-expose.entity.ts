@@ -60,9 +60,32 @@ export class DeviceExpose {
   @Column({ type: 'varchar', length: 32, nullable: true })
   parentType: string | null;
 
-  @ApiProperty({ nullable: true, description: 'Endpoint suffix, e.g. "l1"' })
-  @Column({ type: 'varchar', length: 32, nullable: true, default: null })
-  endpoint: string | null;
+  @ApiProperty({
+    nullable: true,
+    description: 'Composite group key (e.g. inching_control_set) for UI grouping',
+  })
+  @Column({ type: 'varchar', length: 128, nullable: true, default: null })
+  groupKey: string | null;
+
+  @ApiProperty({
+    nullable: true,
+    description: 'Human label for the composite group',
+  })
+  @Column({ type: 'varchar', length: 255, nullable: true, default: null })
+  groupLabel: string | null;
+
+  @ApiProperty({
+    nullable: true,
+    description: 'Description of the composite group',
+  })
+  @Column({ type: 'text', nullable: true, default: null })
+  groupDescription: string | null;
+
+  @ApiProperty({
+    description: 'Endpoint suffix, e.g. "l1". Empty string when none (never null — Postgres UNIQUE treats NULLs as distinct).',
+  })
+  @Column({ type: 'varchar', length: 32, default: '' })
+  endpoint: string;
 
   @ApiProperty({ description: 'Bitmask: 1 published, 2 settable, 4 gettable' })
   @Column({ type: 'int', default: 1 })
