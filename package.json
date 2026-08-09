@@ -7,9 +7,17 @@
     "dev:infra": "docker compose up -d postgres mosquitto",
     "dev:backend": "npm --prefix backend run start:dev",
     "dev:frontend": "npm --prefix frontend run dev",
+    "zigbee:list": "node scripts/zigbee-launcher.mjs --list",
+    "zigbee:detect": "node scripts/zigbee-launcher.mjs --dry-run",
+    "zigbee:start": "node scripts/zigbee-launcher.mjs",
     "build": "npm --prefix backend run build && npm --prefix frontend run build",
     "typecheck": "npm --prefix backend run typecheck && npm --prefix frontend run typecheck",
     "docker:up": "docker compose up -d postgres mosquitto backend frontend",
     "docker:down": "docker compose down"
+  },
+  "dependencies": {
+    "dotenv": "^17.4.2",
+    "serialport": "^13.0.0",
+    "yaml": "^2.9.0"
   }
 }

@@ -42,18 +42,23 @@ Nothing about sensors is hardcoded. The backend reads Zigbee2MQTT **exposes** dy
 
 ---
 
-## Quick start (Docker)
+## Quick start (Windows, Linux, macOS)
 
 ### 1. Prerequisites
 
 - Docker Desktop / Docker Engine with Compose v2
+- Node.js 20+
 - A Zigbee USB coordinator
-- **Windows note:** Docker Desktop cannot pass a COM port into a container. Run Zigbee2MQTT **natively on Windows** (step 3) and leave the `zigbee` Compose profile disabled. On Linux you can enable it.
+
+The application services run in Docker. Zigbee2MQTT runs natively through the
+same Node.js launcher on all three operating systems, avoiding USB passthrough
+differences in Docker Desktop.
 
 ### 2. Start the platform services
 
 ```bash
 cp .env.example .env
+npm install
 docker compose up -d postgres mosquitto backend frontend
 ```
 
@@ -66,27 +71,70 @@ docker compose up -d postgres mosquitto backend frontend
 
 Default login: **admin@local** / **admin123**
 
-### 3. Run Zigbee2MQTT
+### 3. Detect and start Zigbee2MQTT
 
-#### Linux (Docker profile)
-
-1. Find the dongle: `ls -l /dev/serial/by-id/`
-2. Set `ZIGBEE_ADAPTER` in `.env`
-3. Edit `docker/zigbee2mqtt/data/configuration.yaml` (`adapter: zstack` for CC2652P, `ember` for EFR32MG21)
-4. Start it:
+List serial devices:
 
 ```bash
-docker compose --profile zigbee up -d zigbee2mqtt
+npm run zigbee:list
 ```
 
-Zigbee2MQTT UI (optional): http://localhost:8080
+Test detection without starting Zigbee2MQTT:
 
-#### Windows (native)
+```bash
+npm run zigbee:detect
+```
 
-1. Install [Zigbee2MQTT](https://www.zigbee2mqtt.io/guide/installation/01_linux.html) (or run via Node / the Windows guide)
-2. Point its `mqtt.server` at `mqtt://localhost:1883`
-3. Set `serial.port` to your COM port (e.g. `COM3`) and the matching `adapter`
-4. You can copy `docker/zigbee2mqtt/data/configuration.yaml` as a starting point — change `server` to `mqtt://localhost:1883` and `port` to `COMx`
+Start:
+
+```bash
+npm run zigbee:start
+```
+
+Convenience wrappers are also available:
+
+- Windows: `start-zigbee.bat`
+- Linux/macOS: `./start-zigbee.sh`
+
+The launcher detects these platform-specific port formats automatically:
+
+- Windows: `COM5`
+- Linux: `/dev/ttyUSB0`, `/dev/ttyACM0`, or `/dev/serial/by-id/...`
+- macOS: `/dev/cu.usbserial-*` or `/dev/cu.usbmodem-*`
+
+It then detects the adapter, updates the native Zigbee2MQTT configuration,
+clones/installs Zigbee2MQTT when needed, and starts it with
+`mqtt://localhost:1883`.
+
+Some CP210x dongles share USB ID `10C4:EA60`, so hardware alone cannot reliably
+distinguish ZBDongle-P from ZBDongle-E. Override when prompted:
+
+```bash
+# Windows PowerShell
+$env:ZIGBEE_PORT = "COM5"
+$env:ZIGBEE_ADAPTER = "ember" # E=ember, P=zstack
+npm run zigbee:start
+
+# Linux/macOS
+ZIGBEE_PORT=/dev/serial/by-id/your-dongle \
+ZIGBEE_ADAPTER=ember npm run zigbee:start
+```
+
+Existing state under `zigbee2mqtt-windows/data` is reused automatically, so
+upgrading to this launcher does not change the network key or require pairing
+devices again.
+
+Zigbee2MQTT UI: http://localhost:8080
+
+#### Optional Linux Docker profile
+
+Native mode above is recommended and consistent across platforms. Linux may
+still run Zigbee2MQTT in Docker:
+
+```bash
+# Set ZIGBEE_DEVICE=/dev/serial/by-id/... in .env first
+docker compose --profile zigbee up -d zigbee2mqtt
+```
 
 ### 4. Pair devices
 
@@ -131,9 +179,14 @@ npm install serialport
 ```
 SmartHome/
 ├── docker-compose.yml
+├── start-zigbee.bat         Cross-platform launcher wrapper (Windows)
+├── start-zigbee.sh          Cross-platform launcher wrapper (Linux/macOS)
+├── scripts/
+│   └── zigbee-launcher.mjs  Serial detection + native Z2M bootstrap
+├── zigbee2mqtt-native/      Generated source/data (gitignored)
 ├── docker/
 │   ├── mosquitto/config/mosquitto.conf
-│   └── zigbee2mqtt/data/configuration.yaml
+│   └── zigbee2mqtt/data/configuration.yaml  # Optional Linux Docker mode
 ├── backend/                 NestJS + TypeORM + MQTT.js + Socket.IO
 │   └── src/
 │       ├── config/
@@ -199,12 +252,29 @@ Authentication: `Authorization: Bearer <jwt>`. Set `AUTH_ENABLED=false` to disab
 | `DB_*` | zigbee/zigbee | PostgreSQL connection |
 | `MQTT_URL` | `mqtt://localhost:1883` | Mosquitto |
 | `MQTT_BASE_TOPIC` | `zigbee2mqtt` | Must match Zigbee2MQTT `base_topic` |
+| `ZIGBEE_PORT` | auto | Native serial port override (`COM5`, `/dev/...`) |
+| `ZIGBEE_ADAPTER` | auto | Native adapter override (`ember`, `zstack`, `deconz`) |
+| `ZIGBEE_BAUD` | 115200 | Native coordinator baud rate |
+| `ZIGBEE_DATA_DIR` | auto | Native Zigbee2MQTT data directory override |
+| `ZIGBEE_DEVICE` | `/dev/ttyUSB0` | Linux Docker profile host device |
 | `JWT_SECRET` | change-me… | Sign tokens |
 | `ADMIN_EMAIL` / `ADMIN_PASSWORD` | admin@local / admin123 | Seeded on first boot |
 | `ALERT_LOW_BATTERY_PERCENT` | 20 | Low-battery threshold |
 | `ALERT_HIGH_TEMPERATURE_C` | 40 | High-temp threshold |
 | `HISTORY_RETENTION_DAYS` | 90 | Time-series prune |
 | `MQTT_LOG_RETENTION_HOURS` | 48 | Log prune |
+
+---
+
+## Zigbee launcher troubleshooting
+
+| Symptom | Fix |
+| --- | --- |
+| No coordinator found | Run `npm run zigbee:list`, then set `ZIGBEE_PORT` |
+| CP210x adapter is ambiguous | Set `ZIGBEE_ADAPTER=ember` for E or `zstack` for P |
+| `Access denied` / `Resource busy` | Stop the other process holding the serial port |
+| Linux permission denied | Add the user to `dialout`, then log out/in |
+| Zigbee2MQTT cannot reach MQTT | Start Mosquitto and keep `MQTT_URL=mqtt://localhost:1883` |
 
 ---
 
