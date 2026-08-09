@@ -12,5 +12,12 @@ coverage/
 docker/zigbee2mqtt/data/*
 !docker/zigbee2mqtt/data/configuration.yaml
 
+# Cross-platform native Zigbee2MQTT runtime
+zigbee2mqtt-native/zigbee2mqtt/
+zigbee2mqtt-native/data/
+
+# Legacy Windows runtime (launcher automatically reuses its network state)
+zigbee2mqtt-windows/
+
 # Mosquitto runtime
 docker/mosquitto/config/passwd
