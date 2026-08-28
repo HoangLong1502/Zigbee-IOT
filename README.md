@@ -54,13 +54,28 @@ The application services run in Docker. Zigbee2MQTT runs natively through the
 same Node.js launcher on all three operating systems, avoiding USB passthrough
 differences in Docker Desktop.
 
-### 2. Start the platform services
+### 2. One command start (all platforms)
 
 ```bash
-cp .env.example .env
-npm install
-docker compose up -d postgres mosquitto backend frontend
+cp .env.example .env   # first time only
+npm install            # first time only
+npm run start
 ```
+
+Or use the OS wrapper:
+
+| OS | Start | Stop |
+| --- | --- | --- |
+| Windows | `start.bat` | `stop.bat` |
+| Linux / macOS | `sh start.sh` | `sh stop.sh` |
+
+`npm run start` will:
+
+1. Detect OS (Windows / Linux / macOS)
+2. Start Docker if needed (Desktop on Windows/macOS)
+3. Run `docker compose up` for postgres, mosquitto, backend, frontend
+4. Auto-detect Zigbee USB port + adapter
+5. Open Zigbee2MQTT (new terminal on Windows/macOS, or background on headless Linux)
 
 | Service | URL |
 | --- | --- |
@@ -68,33 +83,19 @@ docker compose up -d postgres mosquitto backend frontend
 | Backend API / Swagger | http://localhost:3000/api/docs |
 | Mosquitto MQTT | localhost:1883 |
 | PostgreSQL | localhost:5432 |
+| Zigbee2MQTT UI | http://localhost:8080 |
 
 Default login: **admin@local** / **admin123**
 
-### 3. Detect and start Zigbee2MQTT
-
-List serial devices:
+### 3. Zigbee only (optional)
 
 ```bash
 npm run zigbee:list
-```
-
-Test detection without starting Zigbee2MQTT:
-
-```bash
 npm run zigbee:detect
-```
-
-Start:
-
-```bash
 npm run zigbee:start
 ```
 
-Convenience wrappers are also available:
-
-- Windows: `start-zigbee.bat`
-- Linux/macOS: `./start-zigbee.sh`
+Wrappers: `start-zigbee.bat` (Windows) · `./start-zigbee.sh` (Linux/macOS)
 
 The launcher detects these platform-specific port formats automatically:
 
@@ -179,10 +180,12 @@ npm install serialport
 ```
 SmartHome/
 ├── docker-compose.yml
-├── start-zigbee.bat         Cross-platform launcher wrapper (Windows)
-├── start-zigbee.sh          Cross-platform launcher wrapper (Linux/macOS)
+├── start.bat / start.sh       One-click start (all platforms)
+├── stop.bat / stop.sh         Stop stack + Zigbee2MQTT
 ├── scripts/
-│   └── zigbee-launcher.mjs  Serial detection + native Z2M bootstrap
+│   ├── start-all.mjs          Docker + Zigbee orchestration
+│   ├── stop-all.mjs
+│   └── zigbee-launcher.mjs    Serial detection + native Z2M bootstrap
 ├── zigbee2mqtt-native/      Generated source/data (gitignored)
 ├── docker/
 │   ├── mosquitto/config/mosquitto.conf

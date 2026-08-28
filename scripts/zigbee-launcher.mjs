@@ -33,7 +33,7 @@ const textOf = (port) =>
     .join(' ')
     .toLowerCase();
 
-function inferAdapter(port) {
+function inferAdapter(port, savedAdapter = null) {
   const rawOverride = process.env.ZIGBEE_ADAPTER?.trim();
   // Older project versions used ZIGBEE_ADAPTER for a Linux /dev path.
   const override = rawOverride && !/[\\/]/.test(rawOverride) ? rawOverride : null;
@@ -43,7 +43,27 @@ function inferAdapter(port) {
   if (/zbdongle[-_ ]?e|efr32|ember|skyconnect|slzb-06m/.test(text)) return 'ember';
   if (/zbdongle[-_ ]?p|cc26|cc13|zstack|electrolama|zzh/.test(text)) return 'zstack';
   if (/conbee|deconz/.test(text)) return 'deconz';
-  return KNOWN_DONGLES.get(usbId(port))?.adapter ?? null;
+
+  const fromUsb = KNOWN_DONGLES.get(usbId(port))?.adapter ?? null;
+  if (fromUsb) return fromUsb;
+
+  // CP210x (10C4:EA60) is shared by ZBDongle-P and E — reuse a prior config.
+  if (savedAdapter) return savedAdapter;
+  return null;
+}
+
+function readSavedSerialConfig(dataDir) {
+  const configPath = join(dataDir, 'configuration.yaml');
+  if (!existsSync(configPath)) return { port: null, adapter: null };
+  try {
+    const config = YAML.parse(readFileSync(configPath, 'utf8')) ?? {};
+    return {
+      port: typeof config.serial?.port === 'string' ? config.serial.port.trim() : null,
+      adapter: typeof config.serial?.adapter === 'string' ? config.serial.adapter.trim() : null,
+    };
+  } catch {
+    return { port: null, adapter: null };
+  }
 }
 
 function scorePort(port) {
@@ -219,10 +239,12 @@ function ensureZigbee2Mqtt(sourceDir) {
 }
 
 async function main() {
+  const dataDir = resolveDataDir();
+  const saved = readSavedSerialConfig(dataDir);
   const port = await detectPort();
   if (args.has('--list')) return;
 
-  const adapter = inferAdapter(port);
+  const adapter = inferAdapter(port, saved.adapter);
   if (!adapter) {
     throw new Error(
       `${port.path} (${usbId(port)}) can be either ZBDongle-P or ZBDongle-E. ` +
@@ -230,7 +252,6 @@ async function main() {
     );
   }
 
-  const dataDir = resolveDataDir();
   const sourceDir = resolveSourceDir();
 
   console.log(`OS:       ${process.platform}`);
