@@ -456,6 +456,21 @@ export class DeviceService implements OnModuleInit {
     return device;
   }
 
+  async findUnconfirmedPairings(): Promise<Device[]> {
+    return this.devices.find({
+      where: { pairingConfirmed: false },
+      order: { createdAt: 'ASC' },
+    });
+  }
+
+  async setPairingConfirmed(identifier: string, confirmed: boolean): Promise<Device> {
+    const device = await this.findOne(identifier);
+    device.pairingConfirmed = confirmed;
+    const saved = await this.devices.save(device);
+    this.index(saved);
+    return saved;
+  }
+
   private isUuid(value: string): boolean {
     return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
   }

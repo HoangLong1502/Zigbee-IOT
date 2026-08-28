@@ -15,6 +15,7 @@ import type {
   MqttStatus,
   OtaJob,
   Paginated,
+  PairingPrompt,
   TopologyGraph,
 } from '@/types';
 
@@ -141,8 +142,24 @@ export const coordinatorApi = {
         bridgeOnline: boolean;
         mqttConnected: boolean;
         pendingInterviewCount: number;
+        pendingPairingCount: number;
         description: string;
       }>('/coordinator/discovery')
+      .then((r) => r.data),
+  pairingPrompts: () =>
+    api.get<PairingPrompt[]>('/coordinator/discovery/prompts').then((r) => r.data),
+  acceptPairing: (ieee: string) =>
+    api
+      .post<PairingPrompt>(
+        `/coordinator/discovery/prompts/${encodeURIComponent(ieee)}/accept`,
+      )
+      .then((r) => r.data),
+  rejectPairing: (ieee: string, block = false) =>
+    api
+      .post<PairingPrompt>(
+        `/coordinator/discovery/prompts/${encodeURIComponent(ieee)}/reject`,
+        { block },
+      )
       .then((r) => r.data),
   setDiscoveryMode: (mode: 'manual' | 'auto', windowSeconds?: number) =>
     api

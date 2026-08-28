@@ -93,6 +93,17 @@ export class Device {
   @Column({ type: 'boolean', default: false })
   interviewCompleted: boolean;
 
+  /**
+   * False while a live join is waiting for the operator to accept or reject
+   * the pairing prompt. Existing devices default to true so a backend restart
+   * does not re-ask about the whole network.
+   */
+  @ApiProperty({
+    description: 'False until the operator accepts the nearby-device pairing prompt',
+  })
+  @Column({ type: 'boolean', default: true })
+  pairingConfirmed: boolean;
+
   @ApiProperty({ description: 'False when no Zigbee2MQTT converter matched' })
   @Column({ type: 'boolean', default: true })
   supported: boolean;

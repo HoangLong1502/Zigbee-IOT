@@ -17,6 +17,7 @@ import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/context/ThemeContext';
 import { useRealtimeBridge } from '@/hooks/useRealtimeBridge';
+import { PairingPromptModal } from '@/components/pairing/PairingPromptModal';
 
 const NAV = [
   { to: '/', label: 'Dashboard', icon: Home },
@@ -135,6 +136,7 @@ export function AppLayout() {
           <Outlet />
         </main>
       </div>
+      <PairingPromptModal />
     </div>
   );
 }

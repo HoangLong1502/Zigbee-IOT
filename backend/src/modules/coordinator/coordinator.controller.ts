@@ -1,9 +1,9 @@
-import { Body, Controller, Get, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CoordinatorService } from './coordinator.service';
 import { DiscoveryService } from './discovery.service';
 import { PermitJoinDto, UpdateCoordinatorDto } from './dto/coordinator.dto';
-import { ManualSyncDto, SetPairingModeDto } from './dto/discovery.dto';
+import { ManualSyncDto, RejectPairingDto, SetPairingModeDto } from './dto/discovery.dto';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { RoleName } from '../../domain/entities';
 
@@ -40,13 +40,37 @@ export class CoordinatorController {
     return this.discovery.getStatus();
   }
 
+  @Get('discovery/prompts')
+  @ApiOperation({
+    summary: 'Pending nearby-device pairing prompts waiting for Pair / Don\'t pair',
+  })
+  pairingPrompts() {
+    return this.discovery.listPrompts();
+  }
+
+  @Post('discovery/prompts/:ieee/accept')
+  @Roles(RoleName.ADMIN, RoleName.OPERATOR)
+  @ApiOperation({ summary: 'Keep the nearby device on the network' })
+  acceptPairing(@Param('ieee') ieee: string) {
+    return this.discovery.accept(ieee);
+  }
+
+  @Post('discovery/prompts/:ieee/reject')
+  @Roles(RoleName.ADMIN, RoleName.OPERATOR)
+  @ApiOperation({
+    summary: 'Remove the nearby device instead of pairing it',
+  })
+  rejectPairing(@Param('ieee') ieee: string, @Body() dto: RejectPairingDto = {}) {
+    return this.discovery.reject(ieee, dto.block ?? false);
+  }
+
   @Post('discovery/mode')
   @Roles(RoleName.ADMIN, RoleName.OPERATOR)
   @ApiOperation({
     summary: 'Enable auto-pair (nearby devices) or switch back to manual mode',
     description:
       'Auto mode keeps Zigbee permit-join open so devices in pairing mode within radio ' +
-      'range join automatically. Manual mode only opens the network when you run Sync.',
+      'range can start joining. The dashboard then asks whether to keep each device.',
   })
   setDiscoveryMode(@Body() dto: SetPairingModeDto) {
     return this.discovery.setPairingMode(dto);

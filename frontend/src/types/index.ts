@@ -19,6 +19,7 @@ export interface Device {
   dateCode: string | null;
   interviewStatus: string;
   interviewCompleted: boolean;
+  pairingConfirmed?: boolean;
   supported: boolean;
   disabled: boolean;
   supportsOta: boolean;
@@ -141,6 +142,22 @@ export interface Coordinator {
   detectedPorts: DetectedSerialPort[];
   detectionAvailable: boolean;
   detectionUnavailableReason: string | null;
+}
+
+export interface PairingPrompt {
+  ieeeAddress: string;
+  friendlyName: string;
+  deviceId: string | null;
+  manufacturer: string | null;
+  model: string | null;
+  description: string | null;
+  imageUrl: string | null;
+  interviewStatus: string | null;
+  supported: boolean | null;
+  linkQuality: number | null;
+  nearCoordinator: boolean;
+  pairingMode: 'manual' | 'auto';
+  joinedAt: string;
 }
 
 export interface DetectedSerialPort {

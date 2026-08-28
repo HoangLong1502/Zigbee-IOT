@@ -191,7 +191,7 @@ export function CoordinatorPage() {
         <StatCard
           label="Pairing mode"
           value={isAuto ? 'Auto' : 'Manual'}
-          hint={isAuto ? 'Nearby devices auto-join' : 'Sync to open join'}
+          hint={isAuto ? 'Nearby devices trigger a pair prompt' : 'Sync to open join'}
           tone={isAuto ? 'accent' : 'default'}
           icon={<Radar className="h-5 w-5" />}
         />
@@ -201,7 +201,7 @@ export function CoordinatorPage() {
       <Card className="mb-6">
         <CardHeader
           title="Device discovery"
-          subtitle="Tu ket noi thiet bi gan (auto) hoac dong bo thu cong (manual sync)"
+          subtitle="Keep join open for nearby devices (auto) or open it only when you sync (manual). Either way you confirm each pair."
         />
 
         <div className="mb-4 grid gap-3 lg:grid-cols-2">
@@ -221,8 +221,8 @@ export function CoordinatorPage() {
               {isAuto ? <Badge tone="accent">Active</Badge> : null}
             </div>
             <p className="text-sm text-slate-400">
-              Keep the Zigbee network open. Devices in pairing mode within radio range
-              join automatically — no extra click needed.
+              Keep the Zigbee network open. When a device in pairing mode is within
+              radio range, a prompt asks whether to pair it.
             </p>
           </button>
 
@@ -275,6 +275,9 @@ export function CoordinatorPage() {
           unfinished devices. Put sensors/plugs into pairing mode while the window is open.
           {discovery?.pendingInterviewCount
             ? ` · ${discovery.pendingInterviewCount} device(s) pending interview.`
+            : ''}
+          {discovery?.pendingPairingCount
+            ? ` · ${discovery.pendingPairingCount} nearby device(s) waiting for Pair / Don't pair.`
             : ''}
           {discovery?.lastManualSyncAt
             ? ` · Last sync ${formatRelative(discovery.lastManualSyncAt)}.`
