@@ -10,6 +10,8 @@
     "zigbee:list": "node scripts/zigbee-launcher.mjs --list",
     "zigbee:detect": "node scripts/zigbee-launcher.mjs --dry-run",
     "zigbee:start": "node scripts/zigbee-launcher.mjs",
+    "start": "node scripts/start-all.mjs",
+    "stop": "node scripts/stop-all.mjs",
     "build": "npm --prefix backend run build && npm --prefix frontend run build",
     "typecheck": "npm --prefix backend run typecheck && npm --prefix frontend run typecheck",
     "docker:up": "docker compose up -d postgres mosquitto backend frontend",
