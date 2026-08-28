@@ -1,9 +1,15 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  NotFoundException,
+  OnModuleInit,
+} from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import {
   Coordinator,
+  Device,
   DeviceType,
   EventSeverity,
   EventType,
@@ -17,6 +23,25 @@ import { DeviceService } from '../device/device.service';
 import { EventService } from '../event/event.service';
 import { ManualSyncDto, SetPairingModeDto } from './dto/discovery.dto';
 
+/** LQI at or above this is treated as "next to the coordinator". */
+const NEAR_COORDINATOR_LQI = 100;
+
+export interface PairingPrompt {
+  ieeeAddress: string;
+  friendlyName: string;
+  deviceId: string | null;
+  manufacturer: string | null;
+  model: string | null;
+  description: string | null;
+  imageUrl: string | null;
+  interviewStatus: string | null;
+  supported: boolean | null;
+  linkQuality: number | null;
+  nearCoordinator: boolean;
+  pairingMode: 'manual' | 'auto';
+  joinedAt: string;
+}
+
 export interface DiscoveryStatus {
   pairingMode: 'manual' | 'auto';
   autoPairEnabled: boolean;
@@ -27,6 +52,7 @@ export interface DiscoveryStatus {
   bridgeOnline: boolean;
   mqttConnected: boolean;
   pendingInterviewCount: number;
+  pendingPairingCount: number;
   description: string;
 }
 
@@ -38,7 +64,7 @@ export interface DiscoveryStatus {
  * router). Opening *permit join* is what lets those devices connect.
  *
  * - **Auto mode**: keep permit join open (renewed by cron) so any nearby
- *   pairing device joins without further UI action.
+ *   pairing device can start joining. The dashboard then asks whether to keep it.
  * - **Manual sync**: open a timed join window and optionally re-interview
  *   devices that never finished their Zigbee interview.
  */
@@ -47,6 +73,7 @@ export class DiscoveryService implements OnModuleInit {
   private readonly logger = new Logger(DiscoveryService.name);
   private renewInFlight = false;
   private syncInFlight = false;
+  private readonly pendingPrompts = new Map<string, PairingPrompt>();
 
   constructor(
     @InjectRepository(Coordinator)
@@ -66,6 +93,7 @@ export class DiscoveryService implements OnModuleInit {
         this.logger.warn(`Failed to restore auto-pair: ${error.message}`),
       );
     }
+    await this.restoreUnconfirmedPrompts(coordinator);
   }
 
   async getStatus(): Promise<DiscoveryStatus> {
@@ -90,9 +118,10 @@ export class DiscoveryService implements OnModuleInit {
       bridgeOnline: coordinator.online,
       mqttConnected: this.mqtt.isConnected,
       pendingInterviewCount,
+      pendingPairingCount: this.pendingPrompts.size,
       description: auto
-        ? 'Auto: network stays open so nearby pairing devices can join by themselves'
-        : 'Manual: devices only join when you press Sync or Permit Join',
+        ? 'Auto: network stays open so nearby pairing devices can join; you still confirm each one'
+        : 'Manual: devices only join when you press Sync or Permit Join; you still confirm each one',
     };
   }
 
@@ -111,7 +140,7 @@ export class DiscoveryService implements OnModuleInit {
       await this.renewAutoPairJoin();
       this.events.recordAsync({
         type: EventType.PERMIT_JOIN_CHANGED,
-        message: 'Auto-pair enabled — nearby pairing devices can join automatically',
+        message: 'Auto-pair enabled — nearby pairing devices will trigger a Pair / Don\'t pair prompt',
         data: { pairingMode: 'auto', windowSeconds: coordinator.autoPairWindowSeconds },
       });
     } else {
@@ -255,6 +284,280 @@ export class DiscoveryService implements OnModuleInit {
       this.logger.debug(`Auto-pair: permit join renewed for ${windowSeconds}s`);
     } finally {
       this.renewInFlight = false;
+    }
+  }
+
+  // -------------------------------------------------------------------------
+  // Pairing confirmation prompts
+  // -------------------------------------------------------------------------
+
+  listPrompts(): PairingPrompt[] {
+    return [...this.pendingPrompts.values()].sort((a, b) =>
+      a.joinedAt.localeCompare(b.joinedAt),
+    );
+  }
+
+  /**
+   * A live `device_joined` from Zigbee2MQTT: the radio already accepted the
+   * join (permit join was open). Ask the operator whether to keep it.
+   */
+  async offerJoinPrompt(input: {
+    ieeeAddress?: string | null;
+    friendlyName?: string | null;
+  }): Promise<PairingPrompt | null> {
+    const ieee = this.normalizeIeee(input.ieeeAddress);
+    if (!ieee) return null;
+
+    const coordinator = await this.getCoordinator();
+    const existingDevice = this.devices.resolve(ieee) ?? this.devices.resolve(input.friendlyName ?? '');
+    if (existingDevice?.type === DeviceType.COORDINATOR) return null;
+
+    const prompt = this.mergePrompt(ieee, {
+      ieeeAddress: existingDevice?.ieeeAddress ?? ieee,
+      friendlyName: input.friendlyName ?? existingDevice?.friendlyName ?? ieee,
+      deviceId: existingDevice?.id ?? null,
+      manufacturer: existingDevice?.manufacturer ?? null,
+      model: existingDevice?.model ?? null,
+      description: existingDevice?.description ?? null,
+      imageUrl: existingDevice?.imageUrl ?? null,
+      interviewStatus: existingDevice?.interviewStatus ?? InterviewStatus.PENDING,
+      supported: existingDevice?.supported ?? null,
+      linkQuality: existingDevice?.linkQuality ?? null,
+      pairingMode: coordinator.pairingMode ?? 'manual',
+      joinedAt: this.pendingPrompts.get(ieee)?.joinedAt ?? new Date().toISOString(),
+    });
+
+    if (existingDevice) {
+      try {
+        await this.devices.setPairingConfirmed(existingDevice.ieeeAddress, false);
+      } catch (error) {
+        this.logger.debug(`Could not mark pairing unconfirmed: ${(error as Error).message}`);
+      }
+    }
+
+    this.emitPrompt(prompt);
+    return prompt;
+  }
+
+  /** Interview progress fills in model / vendor so the prompt is recognizable. */
+  updateInterviewPrompt(input: {
+    ieeeAddress?: string | null;
+    friendlyName?: string | null;
+    status?: string | null;
+    supported?: boolean | null;
+    manufacturer?: string | null;
+    model?: string | null;
+    description?: string | null;
+    imageUrl?: string | null;
+  }): PairingPrompt | null {
+    const ieee = this.normalizeIeee(input.ieeeAddress);
+    if (!ieee || !this.pendingPrompts.has(ieee)) return null;
+
+    const prompt = this.mergePrompt(ieee, {
+      friendlyName: input.friendlyName ?? undefined,
+      interviewStatus: input.status ?? undefined,
+      supported: input.supported ?? undefined,
+      manufacturer: input.manufacturer ?? undefined,
+      model: input.model ?? undefined,
+      description: input.description ?? undefined,
+      imageUrl: input.imageUrl ?? undefined,
+    });
+    this.emitPrompt(prompt);
+
+    if (input.status === 'successful') {
+      void this.tryIdentify(prompt.friendlyName);
+    }
+    return prompt;
+  }
+
+  /** Bind the DB row once `bridge/devices` catches up with the live join. */
+  attachDiscoveredDevice(device: Device): PairingPrompt | null {
+    const ieee = this.normalizeIeee(device.ieeeAddress);
+    if (!ieee || device.type === DeviceType.COORDINATOR) return null;
+    if (!this.pendingPrompts.has(ieee)) return null;
+
+    void this.devices
+      .setPairingConfirmed(device.ieeeAddress, false)
+      .catch((error: Error) =>
+        this.logger.debug(`Could not mark pairing unconfirmed: ${error.message}`),
+      );
+
+    const prompt = this.mergePrompt(ieee, {
+      friendlyName: device.friendlyName,
+      deviceId: device.id,
+      manufacturer: device.manufacturer,
+      model: device.model,
+      description: device.description,
+      imageUrl: device.imageUrl,
+      interviewStatus: device.interviewStatus,
+      supported: device.supported,
+      linkQuality: device.linkQuality,
+    });
+    this.emitPrompt(prompt);
+    return prompt;
+  }
+
+  updatePromptLinkQuality(ieeeAddress: string, linkQuality: number | null): void {
+    const ieee = this.normalizeIeee(ieeeAddress);
+    if (!ieee || linkQuality == null) return;
+    const previous = this.pendingPrompts.get(ieee);
+    if (!previous || previous.linkQuality === linkQuality) return;
+    const prompt = this.mergePrompt(ieee, { linkQuality });
+    this.emitPrompt(prompt);
+  }
+
+  dismissLeave(ieeeAddress?: string | null, friendlyName?: string | null): void {
+    const ieee =
+      this.normalizeIeee(ieeeAddress) ??
+      this.findIeeeByFriendlyName(friendlyName);
+    if (!ieee || !this.pendingPrompts.has(ieee)) return;
+    const prompt = this.pendingPrompts.get(ieee)!;
+    this.pendingPrompts.delete(ieee);
+    this.gateway.emit(WS_EVENTS.PAIRING_RESOLVED, {
+      ...prompt,
+      decision: 'left',
+    });
+  }
+
+  async accept(ieeeAddress: string): Promise<PairingPrompt> {
+    const ieee = this.requirePendingIeee(ieeeAddress);
+    const prompt = this.pendingPrompts.get(ieee)!;
+    this.pendingPrompts.delete(ieee);
+
+    try {
+      await this.devices.setPairingConfirmed(prompt.deviceId ?? prompt.ieeeAddress, true);
+    } catch {
+      // The row may not exist yet if bridge/devices has not arrived; keeping
+      // the device on the network is still the accept decision.
+    }
+
+    void this.tryIdentify(prompt.friendlyName);
+
+    this.events.recordAsync({
+      type: EventType.COMMAND,
+      message: `Pairing accepted: ${prompt.friendlyName}`,
+      friendlyName: prompt.friendlyName,
+      ieeeAddress: prompt.ieeeAddress,
+      data: { decision: 'accept', model: prompt.model },
+    });
+    this.gateway.emit(WS_EVENTS.PAIRING_RESOLVED, { ...prompt, decision: 'accept' });
+    return prompt;
+  }
+
+  async reject(ieeeAddress: string, block = false): Promise<PairingPrompt> {
+    const ieee = this.requirePendingIeee(ieeeAddress);
+    const prompt = this.pendingPrompts.get(ieee)!;
+    this.pendingPrompts.delete(ieee);
+
+    const id = prompt.friendlyName || prompt.ieeeAddress;
+    try {
+      await this.commands.removeDevice(id, true, block);
+    } catch (error) {
+      this.logger.warn(
+        `Failed to remove rejected device ${id}: ${(error as Error).message}`,
+      );
+      throw error;
+    }
+
+    this.events.recordAsync({
+      type: EventType.COMMAND,
+      severity: EventSeverity.WARNING,
+      message: `Pairing rejected — removed ${prompt.friendlyName}`,
+      friendlyName: prompt.friendlyName,
+      ieeeAddress: prompt.ieeeAddress,
+      data: { decision: 'reject', block },
+    });
+    this.gateway.emit(WS_EVENTS.PAIRING_RESOLVED, { ...prompt, decision: 'reject' });
+    return prompt;
+  }
+
+  private async restoreUnconfirmedPrompts(coordinator: Coordinator): Promise<void> {
+    const pending = await this.devices.findUnconfirmedPairings();
+    for (const device of pending) {
+      if (device.type === DeviceType.COORDINATOR) continue;
+      const ieee = this.normalizeIeee(device.ieeeAddress);
+      if (!ieee) continue;
+      this.mergePrompt(ieee, {
+        ieeeAddress: device.ieeeAddress,
+        friendlyName: device.friendlyName,
+        deviceId: device.id,
+        manufacturer: device.manufacturer,
+        model: device.model,
+        description: device.description,
+        imageUrl: device.imageUrl,
+        interviewStatus: device.interviewStatus,
+        supported: device.supported,
+        linkQuality: device.linkQuality,
+        pairingMode: coordinator.pairingMode ?? 'manual',
+        joinedAt: device.createdAt?.toISOString() ?? new Date().toISOString(),
+      });
+    }
+    if (this.pendingPrompts.size > 0) {
+      this.logger.log(
+        `Restored ${this.pendingPrompts.size} unpaired device prompt(s)`,
+      );
+    }
+  }
+
+  private mergePrompt(
+    ieee: string,
+    patch: Partial<PairingPrompt> & { ieeeAddress?: string },
+  ): PairingPrompt {
+    const previous = this.pendingPrompts.get(ieee);
+    const linkQuality = patch.linkQuality ?? previous?.linkQuality ?? null;
+    const prompt: PairingPrompt = {
+      ieeeAddress: patch.ieeeAddress ?? previous?.ieeeAddress ?? ieee,
+      friendlyName: patch.friendlyName ?? previous?.friendlyName ?? ieee,
+      deviceId: patch.deviceId ?? previous?.deviceId ?? null,
+      manufacturer: patch.manufacturer ?? previous?.manufacturer ?? null,
+      model: patch.model ?? previous?.model ?? null,
+      description: patch.description ?? previous?.description ?? null,
+      imageUrl: patch.imageUrl ?? previous?.imageUrl ?? null,
+      interviewStatus: patch.interviewStatus ?? previous?.interviewStatus ?? null,
+      supported: patch.supported ?? previous?.supported ?? null,
+      linkQuality,
+      nearCoordinator: linkQuality == null || linkQuality >= NEAR_COORDINATOR_LQI,
+      pairingMode: patch.pairingMode ?? previous?.pairingMode ?? 'manual',
+      joinedAt: patch.joinedAt ?? previous?.joinedAt ?? new Date().toISOString(),
+    };
+    this.pendingPrompts.set(ieee, prompt);
+    return prompt;
+  }
+
+  private emitPrompt(prompt: PairingPrompt): void {
+    this.gateway.emit(WS_EVENTS.PAIRING_PROMPT, prompt);
+  }
+
+  private requirePendingIeee(ieeeAddress: string): string {
+    const ieee = this.normalizeIeee(ieeeAddress) ?? this.findIeeeByFriendlyName(ieeeAddress);
+    if (!ieee || !this.pendingPrompts.has(ieee)) {
+      throw new NotFoundException(`No pending pairing prompt for "${ieeeAddress}"`);
+    }
+    return ieee;
+  }
+
+  private findIeeeByFriendlyName(friendlyName?: string | null): string | null {
+    if (!friendlyName) return null;
+    for (const [ieee, prompt] of this.pendingPrompts) {
+      if (prompt.friendlyName === friendlyName) return ieee;
+    }
+    return this.normalizeIeee(this.devices.resolve(friendlyName)?.ieeeAddress ?? null);
+  }
+
+  private normalizeIeee(value?: string | null): string | null {
+    if (!value) return null;
+    return value.trim().toLowerCase();
+  }
+
+  private async tryIdentify(friendlyName: string): Promise<void> {
+    try {
+      await this.commands.identify(friendlyName);
+    } catch {
+      try {
+        await this.commands.identify(friendlyName, true);
+      } catch {
+        // Many sensors have nothing to blink; ignore.
+      }
     }
   }
 

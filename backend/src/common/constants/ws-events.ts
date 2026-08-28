@@ -30,6 +30,11 @@ export const WS_EVENTS = {
   /** Network map refreshed. */
   TOPOLOGY_UPDATED: 'topology:updated',
 
+  /** A nearby device joined and is waiting for Pair / Don't pair. */
+  PAIRING_PROMPT: 'pairing:prompt',
+  /** The operator accepted or rejected a pairing prompt. */
+  PAIRING_RESOLVED: 'pairing:resolved',
+
   /** Something happened on the network (join, leave, interview, ...). */
   EVENT_CREATED: 'event:created',
 

@@ -118,7 +118,9 @@ export function DevicesPage() {
                       {device.manufacturer ?? 'Unknown'} · {device.model ?? '—'}
                     </p>
                     <div className="mt-2 flex flex-wrap gap-1.5">
-                      <Badge tone="accent">{device.type}</Badge>
+                      {device.pairingConfirmed === false ? (
+                        <Badge tone="warning">Awaiting pair</Badge>
+                      ) : null}
                       <Badge tone={device.online ? 'success' : 'default'}>
                         {device.online ? 'Online' : 'Offline'}
                       </Badge>

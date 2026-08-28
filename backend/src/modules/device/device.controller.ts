@@ -117,15 +117,15 @@ export class DeviceController {
   @Post(':id/factory-reset')
   @Roles(RoleName.ADMIN)
   @ApiOperation({
-    summary: 'Force-remove the device and block re-join',
+    summary: 'Force-remove the device so it can be physically reset and re-paired',
     description:
-      'Zigbee has no remote factory-reset command. The closest safe equivalent is a ' +
-      'forced removal: the device is dropped from the network and blocked, after which ' +
-      'it must be reset physically before it can pair again.',
+      'Zigbee has no remote factory-reset command. This force-removes the device from ' +
+      'the network so a physical reset can pair it again. It does not add the device to ' +
+      'the blocklist (that would silently reject the next join).',
   })
   async factoryReset(@Param('id') id: string) {
     const device = await this.devices.findOne(id);
-    const response = await this.commands.removeDevice(device.friendlyName, true, true);
+    const response = await this.commands.removeDevice(device.friendlyName, true, false);
     return { status: response.status, reset: device.friendlyName };
   }
 

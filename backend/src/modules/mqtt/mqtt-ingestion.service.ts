@@ -5,6 +5,7 @@ import { Subscription } from 'rxjs';
 import {
   AlertType,
   AlertSeverity,
+  DeviceType,
   EventSeverity,
   EventType,
   MessageDirection,
@@ -32,6 +33,7 @@ import { HistoryService } from '../history/history.service';
 import { EventService } from '../event/event.service';
 import { AlertService } from '../alert/alert.service';
 import { CoordinatorService } from '../coordinator/coordinator.service';
+import { DiscoveryService } from '../coordinator/discovery.service';
 import { TopologyService } from '../topology/topology.service';
 import { OtaService, OtaProgressPayload } from '../ota/ota.service';
 
@@ -80,6 +82,7 @@ export class MqttIngestionService implements OnModuleInit, OnModuleDestroy {
     private readonly events: EventService,
     private readonly alerts: AlertService,
     private readonly coordinator: CoordinatorService,
+    private readonly discovery: DiscoveryService,
     private readonly topology: TopologyService,
     private readonly ota: OtaService,
     private readonly gateway: RealtimeGateway,
@@ -286,14 +289,16 @@ export class MqttIngestionService implements OnModuleInit, OnModuleDestroy {
         data: { model: device.model, manufacturer: device.manufacturer },
       });
       this.gateway.emit(WS_EVENTS.DEVICE_ADDED, device);
+      const prompted = this.discovery.attachDiscoveredDevice(device);
 
-      // Anything that appears without a recent interview event is unexpected.
-      this.alerts.raiseAsync({
-        type: AlertType.UNEXPECTED_JOIN,
-        severity: AlertSeverity.INFO,
-        message: `Unexpected device join: ${device.friendlyName}`,
-        device,
-      });
+      if (!prompted && device.type !== DeviceType.COORDINATOR) {
+        this.alerts.raiseAsync({
+          type: AlertType.UNEXPECTED_JOIN,
+          severity: AlertSeverity.INFO,
+          message: `Unexpected device join: ${device.friendlyName}`,
+          device,
+        });
+      }
     }
 
     for (const device of updated) {
@@ -312,6 +317,7 @@ export class MqttIngestionService implements OnModuleInit, OnModuleDestroy {
         ieeeAddress: device.ieeeAddress,
         friendlyName: device.friendlyName,
       });
+      this.discovery.dismissLeave(device.ieeeAddress, device.friendlyName);
       this.alerts.raiseAsync({
         type: AlertType.UNEXPECTED_LEAVE,
         severity: AlertSeverity.WARNING,
@@ -352,6 +358,27 @@ export class MqttIngestionService implements OnModuleInit, OnModuleDestroy {
       ieeeAddress: ieee,
       data: event.data as Record<string, unknown>,
     });
+
+    if (event.type === 'device_joined') {
+      await this.discovery.offerJoinPrompt({
+        ieeeAddress: ieee,
+        friendlyName: friendly,
+      });
+    } else if (event.type === 'device_interview') {
+      const definition = event.data?.definition;
+      this.discovery.updateInterviewPrompt({
+        ieeeAddress: ieee,
+        friendlyName: friendly,
+        status: event.data?.status ?? null,
+        supported: event.data?.supported ?? null,
+        manufacturer: definition?.vendor ?? null,
+        model: definition?.model ?? null,
+        description: definition?.description ?? null,
+        imageUrl: definition?.icon ?? null,
+      });
+    } else if (event.type === 'device_leave') {
+      this.discovery.dismissLeave(ieee, friendly);
+    }
   }
 
   private describeBridgeEvent(event: ZigbeeBridgeEvent): string {
@@ -468,6 +495,7 @@ export class MqttIngestionService implements OnModuleInit, OnModuleDestroy {
       online: true,
       lastSeen: message.receivedAt.toISOString(),
     });
+    this.discovery.updatePromptLinkQuality(device.ieeeAddress, applied.linkQuality);
   }
 
   /** `zigbee2mqtt/<friendly_name>/availability`. */

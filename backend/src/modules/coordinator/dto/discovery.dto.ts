@@ -2,6 +2,16 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { IsBoolean, IsIn, IsInt, IsOptional, Max, Min } from 'class-validator';
 
+export class RejectPairingDto {
+  @ApiPropertyOptional({
+    default: false,
+    description: 'Also block the device from rejoining until it is unblocked',
+  })
+  @IsOptional()
+  @IsBoolean()
+  block?: boolean;
+}
+
 export class SetPairingModeDto {
   @ApiProperty({
     enum: ['manual', 'auto'],
