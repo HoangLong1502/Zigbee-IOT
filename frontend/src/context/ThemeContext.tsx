@@ -7,33 +7,43 @@ import {
   type ReactNode,
 } from 'react';
 
-type Theme = 'dark' | 'light';
+export type Theme = 'dark' | 'light';
 
 interface ThemeContextValue {
   theme: Theme;
+  setTheme: (theme: Theme) => void;
   toggle: () => void;
 }
 
+const STORAGE_KEY = 'zigbee_theme';
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
+function readStoredTheme(): Theme {
+  const stored = localStorage.getItem(STORAGE_KEY);
+  if (stored === 'light' || stored === 'dark') return stored;
+  return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+}
+
+function applyTheme(theme: Theme) {
+  const root = document.documentElement;
+  root.classList.toggle('dark', theme === 'dark');
+  root.classList.toggle('light', theme === 'light');
+  root.style.colorScheme = theme;
+  localStorage.setItem(STORAGE_KEY, theme);
+}
+
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setTheme] = useState<Theme>(() => {
-    const stored = localStorage.getItem('zigbee_theme');
-    return stored === 'light' ? 'light' : 'dark';
-  });
+  const [theme, setThemeState] = useState<Theme>(() => readStoredTheme());
 
   useEffect(() => {
-    const root = document.documentElement;
-    root.classList.toggle('dark', theme === 'dark');
-    root.classList.toggle('light', theme === 'light');
-    localStorage.setItem('zigbee_theme', theme);
-    root.style.colorScheme = theme;
+    applyTheme(theme);
   }, [theme]);
 
   const value = useMemo(
     () => ({
       theme,
-      toggle: () => setTheme((current) => (current === 'dark' ? 'light' : 'dark')),
+      setTheme: setThemeState,
+      toggle: () => setThemeState((current) => (current === 'dark' ? 'light' : 'dark')),
     }),
     [theme],
   );

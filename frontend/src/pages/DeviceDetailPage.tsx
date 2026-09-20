@@ -152,7 +152,7 @@ export function DeviceDetailPage() {
     <div>
       <button
         type="button"
-        className="mb-4 inline-flex items-center gap-2 text-sm text-slate-400 hover:text-white"
+        className="mb-4 inline-flex items-center gap-2 text-sm text-slate-400 hover:text-ink"
         onClick={() => navigate('/devices')}
       >
         <ArrowLeft className="h-4 w-4" /> Back to devices
@@ -205,7 +205,7 @@ export function DeviceDetailPage() {
       {(message || error) && (
         <p
           className={`mb-4 rounded-xl px-3 py-2 text-sm ${
-            error ? 'bg-danger/10 text-rose-300' : 'bg-success/10 text-emerald-300'
+            error ? 'bg-danger/10 text-danger' : 'bg-success/10 text-success'
           }`}
         >
           {error ?? message}
@@ -222,7 +222,7 @@ export function DeviceDetailPage() {
 
       <div className="mb-6 grid gap-4 lg:grid-cols-[280px_1fr]">
         <Card className="flex flex-col items-center text-center">
-          <div className="mb-4 flex h-36 w-36 items-center justify-center overflow-hidden rounded-3xl bg-white/5">
+          <div className="mb-4 flex h-36 w-36 items-center justify-center overflow-hidden rounded-3xl bg-ink/5">
             {device.imageUrl ? (
               <img src={device.imageUrl} alt="" className="h-full w-full object-contain p-3" />
             ) : (
@@ -298,7 +298,7 @@ export function DeviceDetailPage() {
           action={
             <Link
               to="/coordinator"
-              className="text-xs text-slate-400 hover:text-white"
+              className="text-xs text-slate-400 hover:text-ink"
             >
               Bridge status
             </Link>
@@ -323,8 +323,8 @@ export function DeviceDetailPage() {
                   type="button"
                   className={`rounded-lg px-2.5 py-1 text-xs ${
                     range === item.id
-                      ? 'bg-accent/20 text-white'
-                      : 'text-slate-400 hover:bg-white/5'
+                      ? 'bg-accent/20 text-ink'
+                      : 'text-slate-400 hover:bg-ink/5'
                   }`}
                   onClick={() => setRange(item.id)}
                 >
@@ -347,7 +347,7 @@ export function DeviceDetailPage() {
                   className={`rounded-full px-3 py-1 text-xs ${
                     chartProperty === item.property
                       ? 'bg-accent text-white'
-                      : 'bg-white/5 text-slate-300'
+                      : 'bg-ink/5 text-slate-300'
                   }`}
                   onClick={() => setChartProperty(item.property)}
                 >
@@ -380,9 +380,10 @@ export function DeviceDetailPage() {
                     <YAxis stroke="#64748b" fontSize={11} width={40} />
                     <Tooltip
                       contentStyle={{
-                        background: '#0f172a',
-                        border: '1px solid rgba(255,255,255,0.08)',
+                        background: 'rgb(var(--c-surface-900))',
+                        border: '1px solid rgb(var(--c-ink) / 0.12)',
                         borderRadius: 12,
+                        color: 'rgb(var(--c-slate-100))',
                       }}
                       labelFormatter={(value) => formatAbsolute(String(value))}
                     />
@@ -417,7 +418,7 @@ export function DeviceDetailPage() {
               </thead>
               <tbody>
                 {exposes.map((expose) => (
-                  <tr key={expose.id} className="border-t border-white/5">
+                  <tr key={expose.id} className="border-t border-ink/5">
                     <td className="py-2 font-mono text-xs text-slate-200">{expose.property}</td>
                     <td className="py-2 text-slate-400">{expose.type}</td>
                     <td className="py-2 text-slate-400">{expose.access}</td>
@@ -449,7 +450,7 @@ export function DeviceDetailPage() {
               </thead>
               <tbody>
                 {(device.attributes ?? []).map((attribute) => (
-                  <tr key={attribute.id} className="border-t border-white/5">
+                  <tr key={attribute.id} className="border-t border-ink/5">
                     <td className="py-2 font-mono text-xs">{attribute.property}</td>
                     <td className="py-2 text-slate-300">{String(attribute.value)}</td>
                     <td className="py-2 text-xs text-slate-500">

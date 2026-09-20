@@ -86,10 +86,10 @@ export function ExposeRenderer({
       ) : null}
 
       {config.length > 0 && !compact ? (
-        <div className="rounded-2xl border border-white/5 bg-white/[0.02]">
+        <div className="rounded-2xl border border-ink/5 bg-ink/[0.02]">
           <button
             type="button"
-            className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition hover:bg-white/[0.03]"
+            className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition hover:bg-ink/[0.03]"
             onClick={() => setConfigOpen((open) => !open)}
             aria-expanded={configOpen}
           >
@@ -106,7 +106,7 @@ export function ExposeRenderer({
             />
           </button>
           {configOpen ? (
-            <div className="border-t border-white/5 px-4 py-4">
+            <div className="border-t border-ink/5 px-4 py-4">
               <ExposeGrid items={config} values={values} onSet={onSet} compact={false} />
             </div>
           ) : null}
@@ -284,7 +284,7 @@ function ExposeGroupCard({
   return (
     <div
       className={cn(
-        'rounded-2xl border border-white/5 bg-white/[0.03] p-3',
+        'rounded-2xl border border-ink/5 bg-ink/[0.03] p-3',
         compact ? 'p-2.5' : 'sm:col-span-2 xl:col-span-3',
       )}
     >
@@ -314,7 +314,7 @@ function ExposeGroupCard({
         {features.map((expose) => (
           <div
             key={expose.id || expose.property}
-            className="rounded-xl border border-white/5 bg-black/20 p-2.5"
+            className="rounded-xl border border-ink/5 bg-surface-950/80 p-2.5"
           >
             <div className="mb-2 flex items-center justify-between gap-2">
               <span className="truncate text-xs font-medium text-slate-300">
@@ -356,7 +356,7 @@ function ExposeControl({
   return (
     <div
       className={cn(
-        'rounded-2xl border border-white/5 bg-white/[0.03] p-3',
+        'rounded-2xl border border-ink/5 bg-ink/[0.03] p-3',
         compact && 'p-2.5',
       )}
     >
@@ -446,7 +446,7 @@ function BinaryControl({
       type="button"
       className={cn(
         'relative h-8 w-14 rounded-full transition',
-        isOn ? 'bg-accent' : 'bg-white/10',
+        isOn ? 'bg-accent' : 'bg-ink/10',
       )}
       onClick={() => void onSet(expose.property, isOn ? offValue : onValue)}
       aria-label={`Toggle ${expose.property}`}

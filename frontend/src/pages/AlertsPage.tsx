@@ -140,7 +140,7 @@ export function AlertsPage() {
       )}
 
       {listQuery.isError ? (
-        <p className="mt-3 text-sm text-rose-300">{apiErrorMessage(listQuery.error)}</p>
+        <p className="mt-3 text-sm text-danger">{apiErrorMessage(listQuery.error)}</p>
       ) : null}
     </div>
   );

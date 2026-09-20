@@ -155,7 +155,7 @@ export function MqttLogsPage() {
       </div>
 
       <Card className="p-0">
-        <div className="grid grid-cols-[160px_1fr_70px_90px_1.2fr] gap-2 border-b border-white/5 px-4 py-2 text-[11px] uppercase tracking-wide text-slate-500">
+        <div className="grid grid-cols-[160px_1fr_70px_90px_1.2fr] gap-2 border-b border-ink/5 px-4 py-2 text-[11px] uppercase tracking-wide text-slate-500">
           <span>Timestamp</span>
           <span>Topic</span>
           <span>QoS</span>
@@ -183,7 +183,7 @@ export function MqttLogsPage() {
             {rows.map((row, index) => (
               <div
                 key={`${row.createdAt}-${row.topic}-${index}`}
-                className="grid grid-cols-[160px_1fr_70px_90px_1.2fr] gap-2 border-b border-white/[0.04] px-4 py-2 hover:bg-white/[0.03]"
+                className="grid grid-cols-[160px_1fr_70px_90px_1.2fr] gap-2 border-b border-ink/[0.04] px-4 py-2 hover:bg-ink/[0.03]"
               >
                 <span className="text-slate-500">{formatAbsolute(row.createdAt)}</span>
                 <span className="truncate text-slate-200" title={row.topic}>
@@ -211,7 +211,7 @@ export function MqttLogsPage() {
       </Card>
 
       {historyQuery.isError ? (
-        <p className="mt-3 text-sm text-rose-300">{apiErrorMessage(historyQuery.error)}</p>
+        <p className="mt-3 text-sm text-danger">{apiErrorMessage(historyQuery.error)}</p>
       ) : null}
     </div>
   );

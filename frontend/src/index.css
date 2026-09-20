@@ -2,8 +2,65 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
+:root,
+html.light {
+  color-scheme: light;
+  --c-ink: 15 23 42;
+  --c-surface-50: 248 250 252;
+  --c-surface-100: 241 245 249;
+  --c-surface-200: 226 232 240;
+  --c-surface-300: 203 213 225;
+  --c-surface-700: 100 116 139;
+  --c-surface-800: 226 232 240;
+  --c-surface-900: 255 255 255;
+  --c-surface-950: 241 245 249;
+  --c-slate-50: 15 23 42;
+  --c-slate-100: 30 41 59;
+  --c-slate-200: 51 65 85;
+  --c-slate-300: 71 85 105;
+  --c-slate-400: 100 116 139;
+  --c-slate-500: 100 116 139;
+  --c-slate-600: 148 163 184;
+  --c-slate-700: 203 213 225;
+  --c-slate-800: 226 232 240;
+  --c-slate-900: 241 245 249;
+  --c-accent: 79 70 229;
+  --c-accent-soft: 67 56 202;
+  --c-accent-muted: 67 56 202;
+  --c-success: 5 150 105;
+  --c-warning: 217 119 6;
+  --c-danger: 220 38 38;
+  --shadow-card: 0 1px 2px rgb(15 23 42 / 0.05), 0 10px 28px rgb(15 23 42 / 0.08);
+}
+
+html.dark {
   color-scheme: dark;
+  --c-ink: 255 255 255;
+  --c-surface-50: 248 250 252;
+  --c-surface-100: 241 245 249;
+  --c-surface-200: 226 232 240;
+  --c-surface-300: 203 213 225;
+  --c-surface-700: 51 65 85;
+  --c-surface-800: 30 41 59;
+  --c-surface-900: 15 23 42;
+  --c-surface-950: 2 6 23;
+  --c-slate-50: 248 250 252;
+  --c-slate-100: 241 245 249;
+  --c-slate-200: 226 232 240;
+  --c-slate-300: 203 213 225;
+  --c-slate-400: 148 163 184;
+  --c-slate-500: 100 116 139;
+  --c-slate-600: 71 85 105;
+  --c-slate-700: 51 65 85;
+  --c-slate-800: 30 41 59;
+  --c-slate-900: 15 23 42;
+  --c-accent: 99 102 241;
+  --c-accent-soft: 129 140 248;
+  --c-accent-muted: 79 70 229;
+  --c-success: 34 197 94;
+  --c-warning: 245 158 11;
+  --c-danger: 239 68 68;
+  --shadow-card: 0 1px 2px rgb(15 23 42 / 0.35), 0 12px 32px rgb(2 6 23 / 0.45);
 }
 
 html,
@@ -14,13 +71,13 @@ body,
 
 body {
   margin: 0;
-  background: #020617;
-  color: #e2e8f0;
+  background: rgb(var(--c-surface-950));
+  color: rgb(var(--c-slate-100));
 }
 
 @layer components {
   .card {
-    @apply rounded-2xl border border-white/5 bg-surface-900/80 shadow-card backdrop-blur;
+    @apply rounded-2xl border border-ink/10 bg-surface-900/90 shadow-card backdrop-blur;
   }
 
   .btn {
@@ -34,7 +91,7 @@ body {
   }
 
   .btn-secondary {
-    @apply btn border border-white/10 bg-white/5 text-slate-100 hover:bg-white/10;
+    @apply btn border border-ink/10 bg-ink/5 text-slate-100 hover:bg-ink/10;
   }
 
   .btn-danger {
@@ -42,7 +99,7 @@ body {
   }
 
   .input {
-    @apply w-full rounded-xl border border-white/10 bg-surface-950/60 px-3 py-2 text-sm text-slate-100
+    @apply w-full rounded-xl border border-ink/10 bg-surface-950/70 px-3 py-2 text-sm text-slate-100
       placeholder:text-slate-500 focus:border-accent/60 focus:outline-none focus:ring-2 focus:ring-accent/30;
   }
 
@@ -55,13 +112,12 @@ body {
   }
 }
 
-/* Custom scrollbar for the MQTT log viewer */
 .scroll-thin::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 .scroll-thin::-webkit-scrollbar-thumb {
-  background: rgba(148, 163, 184, 0.35);
+  background: rgb(var(--c-slate-400) / 0.45);
   border-radius: 999px;
 }
 .scroll-thin::-webkit-scrollbar-track {

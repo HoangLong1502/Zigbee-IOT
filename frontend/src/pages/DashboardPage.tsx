@@ -142,7 +142,7 @@ export function DashboardPage() {
                   >
                     <Link
                       to={`/devices/${encodeURIComponent(reading.ieeeAddress)}`}
-                      className="block rounded-2xl border border-white/5 bg-white/[0.02] p-3 transition hover:border-accent/30 hover:bg-white/[0.04]"
+                      className="block rounded-2xl border border-ink/5 bg-ink/[0.02] p-3 transition hover:border-accent/30 hover:bg-ink/[0.04]"
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
@@ -202,7 +202,7 @@ export function DashboardPage() {
               {recentEvents.map((event) => (
                 <li
                   key={event.id}
-                  className="flex gap-3 rounded-xl border border-white/5 bg-white/[0.02] px-3 py-2.5"
+                  className="flex gap-3 rounded-xl border border-ink/5 bg-ink/[0.02] px-3 py-2.5"
                 >
                   <SeverityDot severity={event.severity} />
                   <div className="min-w-0 flex-1">

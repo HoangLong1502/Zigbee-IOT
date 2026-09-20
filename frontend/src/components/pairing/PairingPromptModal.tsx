@@ -109,7 +109,7 @@ export function PairingPromptModal() {
               <Radio className="h-5 w-5" />
             </div>
             <div>
-              <p id="pairing-prompt-title" className="text-base font-semibold text-white">
+              <p id="pairing-prompt-title" className="text-base font-semibold text-ink">
                 Nearby Zigbee device
               </p>
               <p className="text-xs text-slate-400">
@@ -120,7 +120,7 @@ export function PairingPromptModal() {
           </div>
           <button
             type="button"
-            className="rounded-lg p-1.5 text-slate-500 hover:bg-white/10 hover:text-white"
+            className="rounded-lg p-1.5 text-slate-500 hover:bg-ink/10 hover:text-ink"
             aria-label="Ask again later"
             disabled={busy}
             onClick={() =>
@@ -135,8 +135,8 @@ export function PairingPromptModal() {
           </button>
         </div>
 
-        <div className="mb-4 flex gap-3 rounded-2xl border border-white/10 bg-white/[0.03] p-3">
-          <div className="h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-white/5">
+        <div className="mb-4 flex gap-3 rounded-2xl border border-ink/10 bg-ink/[0.03] p-3">
+          <div className="h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-ink/5">
             {current.imageUrl ? (
               <img src={current.imageUrl} alt="" className="h-full w-full object-contain p-1" />
             ) : (
@@ -175,7 +175,7 @@ export function PairingPromptModal() {
           network. Don&apos;t pair removes it immediately.
         </p>
 
-        {error ? <p className="mb-3 text-sm text-rose-300">{error}</p> : null}
+        {error ? <p className="mb-3 text-sm text-danger">{error}</p> : null}
 
         <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
           <button

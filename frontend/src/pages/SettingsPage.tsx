@@ -11,6 +11,7 @@ import {
   PageHeader,
   Spinner,
 } from '@/components/ui/Card';
+import { ThemePicker } from '@/components/ui/ThemeToggle';
 
 interface ThresholdForm {
   lowBatteryPercent: number;
@@ -46,10 +47,18 @@ export function SettingsPage() {
     <div>
       <PageHeader
         title="Settings"
-        description="Alert thresholds, MQTT identity and OTA job history"
+        description="Theme, alert thresholds, MQTT identity and OTA job history"
       />
 
       <div className="grid gap-6 xl:grid-cols-2">
+        <Card>
+          <CardHeader
+            title="Appearance"
+            subtitle="Light and dark backgrounds for the monitoring UI"
+          />
+          <ThemePicker />
+        </Card>
+
         <Card>
           <CardHeader title="Alert Thresholds" />
           {settingsQuery.isLoading ? (
@@ -82,10 +91,10 @@ export function SettingsPage() {
                 Save thresholds
               </button>
               {save.isError ? (
-                <p className="text-sm text-rose-300">{apiErrorMessage(save.error)}</p>
+                <p className="text-sm text-danger">{apiErrorMessage(save.error)}</p>
               ) : null}
               {save.isSuccess ? (
-                <p className="text-sm text-emerald-300">Thresholds updated for this process</p>
+                <p className="text-sm text-success">Thresholds updated for this process</p>
               ) : null}
             </form>
           )}
@@ -139,7 +148,7 @@ export function SettingsPage() {
                 </thead>
                 <tbody>
                   {otaQuery.data!.map((job) => (
-                    <tr key={job.id} className="border-t border-white/5">
+                    <tr key={job.id} className="border-t border-ink/10">
                       <td className="py-2">{job.friendlyName}</td>
                       <td className="py-2">
                         <Badge
@@ -175,7 +184,7 @@ export function SettingsPage() {
 
 function Row({ label, value }: { label: string; value: ReactNode }) {
   return (
-    <div className="flex items-start justify-between gap-4 border-b border-white/5 pb-2">
+    <div className="flex items-start justify-between gap-4 border-b border-ink/10 pb-2">
       <dt className="text-slate-400">{label}</dt>
       <dd className="text-right font-mono text-xs text-slate-100">{value}</dd>
     </div>
