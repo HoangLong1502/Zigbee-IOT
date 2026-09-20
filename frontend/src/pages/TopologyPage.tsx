@@ -160,7 +160,7 @@ export function TopologyPage() {
       />
 
       {refresh.isError ? (
-        <p className="mb-4 rounded-xl bg-danger/10 px-3 py-2 text-sm text-rose-300">
+        <p className="mb-4 rounded-xl bg-danger/10 px-3 py-2 text-sm text-danger">
           {apiErrorMessage(refresh.error)}
         </p>
       ) : null}
@@ -215,7 +215,7 @@ export function TopologyPage() {
                         x={(source.x + target.x) / 2}
                         y={(source.y + target.y) / 2 - 4}
                         textAnchor="middle"
-                        fill="#94a3b8"
+                        fill="rgb(var(--c-slate-400))"
                         fontSize="10"
                       >
                         {edge.linkQuality}
@@ -245,14 +245,14 @@ export function TopologyPage() {
                         r={radius + (selected === node.id ? 4 : 0)}
                         fill={fill}
                         opacity={node.failed ? 0.4 : 1}
-                        stroke={selected === node.id ? '#fff' : 'transparent'}
+                        stroke={selected === node.id ? 'rgb(var(--c-ink))' : 'transparent'}
                         strokeWidth={2}
                       />
                       <text
                         x={node.x}
                         y={node.y + radius + 14}
                         textAnchor="middle"
-                        fill="#e2e8f0"
+                        fill="rgb(var(--c-slate-100))"
                         fontSize="11"
                       >
                         {node.friendlyName.length > 18
@@ -263,7 +263,7 @@ export function TopologyPage() {
                   );
                 })}
               </svg>
-              <p className="border-t border-white/5 px-4 py-2 text-xs text-slate-500">
+              <p className="border-t border-ink/5 px-4 py-2 text-xs text-slate-500">
                 Last scan {data.generatedAt ? formatAbsolute(data.generatedAt) : '—'} ·
                 Auto-refreshes when a new snapshot arrives over WebSocket
               </p>
@@ -273,7 +273,7 @@ export function TopologyPage() {
               <CardHeader title="Node details" />
               {selectedNode ? (
                 <div className="space-y-3 text-sm">
-                  <p className="text-base font-medium text-white">{selectedNode.friendlyName}</p>
+                  <p className="text-base font-medium text-ink">{selectedNode.friendlyName}</p>
                   <Badge tone="accent">{selectedNode.type}</Badge>
                   {selectedNode.failed ? <Badge tone="danger">Scan failed</Badge> : null}
                   <Info label="IEEE" value={selectedNode.ieeeAddress} />
@@ -299,7 +299,7 @@ export function TopologyPage() {
                           return (
                             <li
                               key={`${edge.source}-${edge.target}`}
-                              className="flex items-center justify-between rounded-lg bg-white/5 px-2 py-1.5 text-xs"
+                              className="flex items-center justify-between rounded-lg bg-ink/5 px-2 py-1.5 text-xs"
                             >
                               <span className="truncate text-slate-300">
                                 {other?.friendlyName ?? otherId}

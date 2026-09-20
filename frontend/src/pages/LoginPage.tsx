@@ -4,6 +4,7 @@ import { Activity } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { apiErrorMessage } from '@/lib/api';
 import { Spinner } from '@/components/ui/Card';
+import { ThemeToggle } from '@/components/ui/ThemeToggle';
 
 export function LoginPage() {
   const { login, isAuthenticated, loading } = useAuth();
@@ -28,13 +29,16 @@ export function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-full items-center justify-center bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-900/40 via-surface-950 to-surface-950 px-4">
+    <div className="relative flex min-h-full items-center justify-center bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-500/20 via-surface-950 to-surface-950 px-4">
+      <div className="absolute right-4 top-4">
+        <ThemeToggle className="rounded-xl border border-ink/10 bg-surface-900/80 p-2" />
+      </div>
       <form onSubmit={onSubmit} className="card w-full max-w-md p-8">
         <div className="mb-8 flex flex-col items-center text-center">
           <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-accent/20 text-accent-soft">
             <Activity className="h-6 w-6" />
           </div>
-          <h1 className="text-xl font-semibold text-white">Zigbee Monitor</h1>
+          <h1 className="text-xl font-semibold text-ink">Zigbee Monitor</h1>
           <p className="mt-1 text-sm text-slate-400">Sign in to the IoT monitoring platform</p>
         </div>
 
@@ -65,7 +69,7 @@ export function LoginPage() {
         />
 
         {error ? (
-          <p className="mb-4 rounded-xl bg-danger/10 px-3 py-2 text-sm text-rose-300">{error}</p>
+          <p className="mb-4 rounded-xl bg-danger/10 px-3 py-2 text-sm text-danger">{error}</p>
         ) : null}
 
         <button type="submit" className="btn-primary w-full" disabled={submitting}>

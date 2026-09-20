@@ -1,31 +1,46 @@
 /** @type {import('tailwindcss').Config} */
+const rgb = (name) => `rgb(var(${name}) / <alpha-value>)`;
+
 export default {
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
   darkMode: 'class',
   theme: {
     extend: {
       colors: {
+        ink: rgb('--c-ink'),
         surface: {
-          50: '#f8fafc',
-          100: '#f1f5f9',
-          200: '#e2e8f0',
-          300: '#cbd5e1',
-          700: '#334155',
-          800: '#1e293b',
-          900: '#0f172a',
-          950: '#020617',
+          50: rgb('--c-surface-50'),
+          100: rgb('--c-surface-100'),
+          200: rgb('--c-surface-200'),
+          300: rgb('--c-surface-300'),
+          700: rgb('--c-surface-700'),
+          800: rgb('--c-surface-800'),
+          900: rgb('--c-surface-900'),
+          950: rgb('--c-surface-950'),
+        },
+        slate: {
+          50: rgb('--c-slate-50'),
+          100: rgb('--c-slate-100'),
+          200: rgb('--c-slate-200'),
+          300: rgb('--c-slate-300'),
+          400: rgb('--c-slate-400'),
+          500: rgb('--c-slate-500'),
+          600: rgb('--c-slate-600'),
+          700: rgb('--c-slate-700'),
+          800: rgb('--c-slate-800'),
+          900: rgb('--c-slate-900'),
         },
         accent: {
-          DEFAULT: '#6366f1',
-          soft: '#818cf8',
-          muted: '#4f46e5',
+          DEFAULT: rgb('--c-accent'),
+          soft: rgb('--c-accent-soft'),
+          muted: rgb('--c-accent-muted'),
         },
-        success: '#22c55e',
-        warning: '#f59e0b',
-        danger: '#ef4444',
+        success: rgb('--c-success'),
+        warning: rgb('--c-warning'),
+        danger: rgb('--c-danger'),
       },
       boxShadow: {
-        card: '0 1px 2px rgba(15, 23, 42, 0.06), 0 8px 24px rgba(15, 23, 42, 0.06)',
+        card: 'var(--shadow-card)',
       },
       fontFamily: {
         sans: [

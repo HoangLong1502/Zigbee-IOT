@@ -148,8 +148,8 @@ export function DeviceOnOffToggle({
             'disabled:cursor-not-allowed disabled:opacity-40',
             size === 'sm' ? 'px-2.5 py-1 text-[11px]' : 'px-3 py-1.5 text-xs',
             channel.isOn
-              ? 'bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30'
-              : 'bg-white/10 text-slate-300 hover:bg-white/15',
+              ? 'bg-emerald-500/20 text-success hover:bg-emerald-500/30'
+              : 'bg-ink/10 text-slate-300 hover:bg-ink/15',
           )}
           onClick={(event) => {
             event.preventDefault();
@@ -161,7 +161,7 @@ export function DeviceOnOffToggle({
           <Power
             className={cn(
               size === 'sm' ? 'h-3 w-3' : 'h-3.5 w-3.5',
-              channel.isOn ? 'text-emerald-300' : 'text-slate-400',
+              channel.isOn ? 'text-success' : 'text-slate-400',
             )}
           />
           {channels.length === 1
@@ -172,7 +172,7 @@ export function DeviceOnOffToggle({
         </button>
       ))}
       {mutation.isError ? (
-        <span className="text-[10px] text-rose-300">{apiErrorMessage(mutation.error)}</span>
+        <span className="text-[10px] text-danger">{apiErrorMessage(mutation.error)}</span>
       ) : null}
     </div>
   );

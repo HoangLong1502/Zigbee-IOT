@@ -89,10 +89,10 @@ export function DevicesPage() {
               <Link
                 key={device.id}
                 to={`/devices/${encodeURIComponent(device.ieeeAddress)}`}
-                className="card group p-4 transition hover:border-accent/40 hover:bg-white/[0.03]"
+                className="card group p-4 transition hover:border-accent/40 hover:bg-ink/[0.03]"
               >
                 <div className="flex items-start gap-3">
-                  <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-2xl bg-white/5">
+                  <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-2xl bg-ink/5">
                     {device.imageUrl ? (
                       <img
                         src={device.imageUrl}
@@ -105,13 +105,13 @@ export function DevicesPage() {
                       </div>
                     )}
                     <span
-                      className={`absolute bottom-1 right-1 h-2.5 w-2.5 rounded-full ring-2 ring-surface-900 ${
+                      className={`absolute bottom-1 right-1 h-2.5 w-2.5 rounded-full ring-2 ring-surface-950 ${
                         device.online ? 'bg-success' : 'bg-slate-600'
                       }`}
                     />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate font-medium text-slate-100 group-hover:text-white">
+                    <p className="truncate font-medium text-slate-100 group-hover:text-ink">
                       {device.friendlyName}
                     </p>
                     <p className="truncate text-xs text-slate-500">

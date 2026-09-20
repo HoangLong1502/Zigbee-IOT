@@ -5,19 +5,17 @@ import {
   Cpu,
   Home,
   LogOut,
-  Moon,
   Network,
   Radio,
   ScrollText,
   Settings,
-  Sun,
   Wifi,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/AuthContext';
-import { useTheme } from '@/context/ThemeContext';
 import { useRealtimeBridge } from '@/hooks/useRealtimeBridge';
 import { PairingPromptModal } from '@/components/pairing/PairingPromptModal';
+import { ThemeToggle } from '@/components/ui/ThemeToggle';
 
 const NAV = [
   { to: '/', label: 'Dashboard', icon: Home },
@@ -31,18 +29,17 @@ const NAV = [
 
 export function AppLayout() {
   const { user, logout } = useAuth();
-  const { theme, toggle } = useTheme();
   const { connected } = useRealtimeBridge();
 
   return (
     <div className="flex min-h-full bg-surface-950">
-      <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r border-white/5 bg-surface-900/70 px-4 py-5 backdrop-blur lg:flex">
+      <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r border-ink/10 bg-surface-900/80 px-4 py-5 backdrop-blur lg:flex">
         <div className="mb-8 flex items-center gap-3 px-2">
           <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-accent/20 text-accent-soft">
             <Activity className="h-5 w-5" />
           </div>
           <div>
-            <p className="text-sm font-semibold text-white">Zigbee Monitor</p>
+            <p className="text-sm font-semibold text-ink">Zigbee Monitor</p>
             <p className="text-xs text-slate-400">IoT Platform</p>
           </div>
         </div>
@@ -57,8 +54,8 @@ export function AppLayout() {
                 cn(
                   'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition',
                   isActive
-                    ? 'bg-accent/20 text-white'
-                    : 'text-slate-400 hover:bg-white/5 hover:text-slate-100',
+                    ? 'bg-accent/15 text-ink'
+                    : 'text-slate-400 hover:bg-ink/5 hover:text-slate-100',
                 )
               }
             >
@@ -68,22 +65,15 @@ export function AppLayout() {
           ))}
         </nav>
 
-        <div className="mt-auto space-y-3 border-t border-white/5 pt-4">
+        <div className="mt-auto space-y-3 border-t border-ink/10 pt-4">
           <div className="flex items-center justify-between px-2 text-xs">
             <span className="flex items-center gap-1.5 text-slate-400">
               <Wifi className={cn('h-3.5 w-3.5', connected ? 'text-success' : 'text-danger')} />
               {connected ? 'Live' : 'Offline'}
             </span>
-            <button
-              type="button"
-              onClick={toggle}
-              className="rounded-lg p-1.5 text-slate-400 hover:bg-white/5 hover:text-white"
-              aria-label="Toggle theme"
-            >
-              {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-            </button>
+            <ThemeToggle />
           </div>
-          <div className="flex items-center justify-between rounded-xl bg-white/5 px-3 py-2">
+          <div className="flex items-center justify-between rounded-xl bg-ink/5 px-3 py-2">
             <div className="min-w-0">
               <p className="truncate text-sm text-slate-200">{user?.email ?? 'Guest'}</p>
               <p className="truncate text-xs text-slate-500">
@@ -93,7 +83,7 @@ export function AppLayout() {
             <button
               type="button"
               onClick={logout}
-              className="rounded-lg p-1.5 text-slate-400 hover:bg-white/10 hover:text-white"
+              className="rounded-lg p-1.5 text-slate-400 hover:bg-ink/10 hover:text-ink"
               aria-label="Sign out"
             >
               <LogOut className="h-4 w-4" />
@@ -103,18 +93,21 @@ export function AppLayout() {
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-20 flex items-center justify-between border-b border-white/5 bg-surface-950/80 px-4 py-3 backdrop-blur lg:hidden">
+        <header className="sticky top-0 z-20 flex items-center justify-between border-b border-ink/10 bg-surface-950/80 px-4 py-3 backdrop-blur lg:hidden">
           <div className="flex items-center gap-2">
             <Activity className="h-5 w-5 text-accent-soft" />
             <span className="font-semibold">Zigbee Monitor</span>
           </div>
-          <span className="flex items-center gap-1.5 text-xs text-slate-400">
-            <Wifi className={cn('h-3.5 w-3.5', connected ? 'text-success' : 'text-danger')} />
-            {connected ? 'Live' : 'Offline'}
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="flex items-center gap-1.5 text-xs text-slate-400">
+              <Wifi className={cn('h-3.5 w-3.5', connected ? 'text-success' : 'text-danger')} />
+              {connected ? 'Live' : 'Offline'}
+            </span>
+            <ThemeToggle />
+          </div>
         </header>
 
-        <nav className="flex gap-1 overflow-x-auto border-b border-white/5 px-2 py-2 lg:hidden">
+        <nav className="flex gap-1 overflow-x-auto border-b border-ink/10 px-2 py-2 lg:hidden">
           {NAV.map((item) => (
             <NavLink
               key={item.to}
@@ -123,7 +116,7 @@ export function AppLayout() {
               className={({ isActive }) =>
                 cn(
                   'whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-medium',
-                  isActive ? 'bg-accent/20 text-white' : 'text-slate-400',
+                  isActive ? 'bg-accent/15 text-ink' : 'text-slate-400',
                 )
               }
             >

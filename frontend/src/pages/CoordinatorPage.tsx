@@ -210,7 +210,7 @@ export function CoordinatorPage() {
             className={`rounded-2xl border p-4 text-left transition ${
               isAuto
                 ? 'border-accent/50 bg-accent/15'
-                : 'border-white/10 bg-white/[0.02] hover:border-white/20'
+                : 'border-ink/10 bg-ink/[0.02] hover:border-ink/20'
             }`}
             disabled={setMode.isPending}
             onClick={() => setMode.mutate('auto')}
@@ -231,7 +231,7 @@ export function CoordinatorPage() {
             className={`rounded-2xl border p-4 text-left transition ${
               !isAuto
                 ? 'border-accent/50 bg-accent/15'
-                : 'border-white/10 bg-white/[0.02] hover:border-white/20'
+                : 'border-ink/10 bg-ink/[0.02] hover:border-ink/20'
             }`}
             disabled={setMode.isPending}
             onClick={() => setMode.mutate('manual')}
@@ -247,7 +247,7 @@ export function CoordinatorPage() {
           </button>
         </div>
 
-        <div className="flex flex-col gap-3 rounded-2xl border border-white/5 bg-white/[0.02] p-4 sm:flex-row sm:items-end">
+        <div className="flex flex-col gap-3 rounded-2xl border border-ink/5 bg-ink/[0.02] p-4 sm:flex-row sm:items-end">
           <label className="block flex-1">
             <span className="label">Sync window (seconds)</span>
             <input
@@ -288,8 +288,8 @@ export function CoordinatorPage() {
           <p
             className={`mt-3 rounded-xl px-3 py-2 text-sm ${
               manualSync.isError || setMode.isError
-                ? 'bg-danger/10 text-rose-300'
-                : 'bg-success/10 text-emerald-300'
+                ? 'bg-danger/10 text-danger'
+                : 'bg-success/10 text-success'
             }`}
           >
             {syncMessage}
@@ -347,7 +347,7 @@ export function CoordinatorPage() {
               {data.detectedPorts.map((port) => (
                 <li
                   key={port.path}
-                  className="flex items-start justify-between gap-3 rounded-xl border border-white/5 bg-white/[0.02] px-3 py-2"
+                  className="flex items-start justify-between gap-3 rounded-xl border border-ink/5 bg-ink/[0.02] px-3 py-2"
                 >
                   <div>
                     <p className="font-mono text-sm text-slate-100">{port.path}</p>
@@ -435,7 +435,7 @@ export function CoordinatorPage() {
                 Save settings
               </button>
               {save.isSuccess ? (
-                <p className="text-sm text-emerald-300">
+                <p className="text-sm text-success">
                   Saved
                   {save.data?.warnings?.length
                     ? ` — ${(save.data.warnings as string[]).join(' · ')}`
@@ -443,11 +443,11 @@ export function CoordinatorPage() {
                 </p>
               ) : null}
               {save.isError ? (
-                <p className="text-sm text-rose-300">{apiErrorMessage(save.error)}</p>
+                <p className="text-sm text-danger">{apiErrorMessage(save.error)}</p>
               ) : null}
             </div>
           </form>
-          <p className="mt-4 text-xs text-amber-300/90">
+          <p className="mt-4 text-xs text-warning">
             Changing PAN ID, channel or network key creates a new Zigbee network — every
             device must be paired again. Serial changes require a Zigbee2MQTT restart.
           </p>
