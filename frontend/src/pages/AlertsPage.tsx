@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { CheckCheck } from 'lucide-react';
 import { alertsApi, apiErrorMessage } from '@/lib/api';
 import { formatRelative } from '@/lib/utils';
+import { useLanguage } from '@/context/LanguageContext';
 import {
   Badge,
   Card,
@@ -12,6 +13,7 @@ import {
 } from '@/components/ui/Card';
 
 export function AlertsPage() {
+  const { t } = useLanguage();
   const queryClient = useQueryClient();
 
   const listQuery = useQuery({
@@ -54,8 +56,8 @@ export function AlertsPage() {
   return (
     <div>
       <PageHeader
-        title="Alerts"
-        description="Low battery, offline devices, water leak, smoke and more"
+        title={t('Alerts')}
+        description={t('Low battery, offline devices, water leak, smoke and more')}
         actions={
           <button
             type="button"
@@ -67,16 +69,16 @@ export function AlertsPage() {
               acknowledgeAll.mutate();
             }}
           >
-            <CheckCheck className="h-4 w-4" /> Acknowledge all
+            <CheckCheck className="h-4 w-4" /> {t('Acknowledge all')}
           </button>
         }
       />
 
       <div className="mb-6 grid gap-3 sm:grid-cols-4">
-        <StatCard label="Active" value={summary?.active ?? 0} tone="warning" />
-        <StatCard label="Critical" value={summary?.critical ?? 0} tone="danger" />
-        <StatCard label="Warning" value={summary?.warning ?? 0} />
-        <StatCard label="Unacknowledged" value={summary?.unacknowledged ?? 0} tone="accent" />
+        <StatCard label={t('Active')} value={summary?.active ?? 0} tone="warning" />
+        <StatCard label={t('Critical')} value={summary?.critical ?? 0} tone="danger" />
+        <StatCard label={t('Warning')} value={summary?.warning ?? 0} />
+        <StatCard label={t('Unacknowledged')} value={summary?.unacknowledged ?? 0} tone="accent" />
       </div>
 
       {listQuery.isLoading ? (
@@ -84,7 +86,7 @@ export function AlertsPage() {
           <Spinner className="h-8 w-8" />
         </div>
       ) : items.length === 0 ? (
-        <EmptyState title="No alerts" description="Everything looks calm." />
+        <EmptyState title={t('No alerts')} description={t('Everything looks calm.')} />
       ) : (
         <div className="space-y-3">
           {items.map((alert) => (
@@ -103,14 +105,14 @@ export function AlertsPage() {
                     {alert.severity}
                   </Badge>
                   <Badge>{alert.type}</Badge>
-                  {alert.resolved ? <Badge tone="success">resolved</Badge> : null}
+                    {alert.resolved ? <Badge tone="success">{t('resolved')}</Badge> : null}
                   {!alert.acknowledged && !alert.resolved ? (
-                    <Badge tone="accent">new</Badge>
+                    <Badge tone="accent">{t('new')}</Badge>
                   ) : null}
                 </div>
                 <p className="text-sm text-slate-100">{alert.message}</p>
                 <p className="mt-1 text-xs text-slate-500">
-                  {alert.friendlyName ?? 'System'} · {alert.occurrences}× · last{' '}
+                  {alert.friendlyName ?? t('System')} · {alert.occurrences}× · {t('last')}{' '}
                   {formatRelative(alert.lastOccurredAt)}
                 </p>
               </div>
@@ -121,7 +123,7 @@ export function AlertsPage() {
                     className="btn-secondary"
                     onClick={() => acknowledge.mutate(alert.id)}
                   >
-                    Acknowledge
+                    {t('Acknowledge')}
                   </button>
                 ) : null}
                 {!alert.resolved ? (
@@ -130,7 +132,7 @@ export function AlertsPage() {
                     className="btn-primary"
                     onClick={() => resolve.mutate(alert.id)}
                   >
-                    Resolve
+                    {t('Resolve')}
                   </button>
                 ) : null}
               </div>

@@ -28,6 +28,7 @@ import {
   prettyJson,
 } from '@/lib/utils';
 import type { HistoryRange } from '@/types';
+import { useLanguage } from '@/context/LanguageContext';
 import { ExposeRenderer } from '@/components/exposes/ExposeRenderer';
 import { DeviceOnOffToggle } from '@/components/devices/DeviceOnOffToggle';
 import {
@@ -48,6 +49,7 @@ const RANGES: Array<{ id: HistoryRange; label: string }> = [
 ];
 
 export function DeviceDetailPage() {
+  const { t } = useLanguage();
   const { id = '' } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -111,7 +113,7 @@ export function DeviceDetailPage() {
   const setMutation = useMutation({
     mutationFn: ({ property, value }: { property: string; value: unknown }) =>
       devicesApi.set(id, { [property]: value }),
-    onSuccess: () => setMessage('Command sent'),
+    onSuccess: () => setMessage(t('Command sent')),
     onError: (err) => setError(apiErrorMessage(err)),
   });
 
@@ -142,8 +144,8 @@ export function DeviceDetailPage() {
   if (!device) {
     return (
       <EmptyState
-        title="Device not found"
-        description="It may have left the network. Return to the device list."
+        title={t('Device not found')}
+        description={t('It may have left the network. Return to the device list.')}
       />
     );
   }
@@ -155,12 +157,12 @@ export function DeviceDetailPage() {
         className="mb-4 inline-flex items-center gap-2 text-sm text-slate-400 hover:text-ink"
         onClick={() => navigate('/devices')}
       >
-        <ArrowLeft className="h-4 w-4" /> Back to devices
+        <ArrowLeft className="h-4 w-4" /> {t('Back to devices')}
       </button>
 
       <PageHeader
         title={device.friendlyName}
-        description={`${device.manufacturer ?? 'Unknown'} · ${device.model ?? '—'} · ${device.ieeeAddress}`}
+        description={`${device.manufacturer ?? t('Unknown')} · ${device.model ?? '—'} · ${device.ieeeAddress}`}
         actions={
           <>
             <DeviceOnOffToggle device={device} />
@@ -169,34 +171,34 @@ export function DeviceDetailPage() {
               className="btn-secondary"
               onClick={() => void action('Identify', () => devicesApi.identify(id))}
             >
-              <BellRing className="h-4 w-4" /> Identify
+              <BellRing className="h-4 w-4" /> {t('Identify')}
             </button>
             <button
               type="button"
               className="btn-secondary"
               onClick={() => void action('Ping', () => devicesApi.ping(id))}
             >
-              <RefreshCw className="h-4 w-4" /> Ping
+              <RefreshCw className="h-4 w-4" /> {t('Ping')}
             </button>
             <button
               type="button"
               className="btn-secondary"
               onClick={() => void action('Reconfigure', () => devicesApi.configure(id))}
             >
-              <Wrench className="h-4 w-4" /> Reconfigure
+              <Wrench className="h-4 w-4" /> {t('Reconfigure')}
             </button>
             <button
               type="button"
               className="btn-danger"
               onClick={() => {
-                if (confirm(`Remove ${device.friendlyName} from the network?`)) {
+                if (confirm(`${t('Remove')} ${device.friendlyName}?`)) {
                   void action('Remove', () => devicesApi.remove(id, true)).then(() =>
                     navigate('/devices'),
                   );
                 }
               }}
             >
-              <Trash2 className="h-4 w-4" /> Remove
+              <Trash2 className="h-4 w-4" /> {t('Remove')}
             </button>
           </>
         }
@@ -226,12 +228,12 @@ export function DeviceDetailPage() {
             {device.imageUrl ? (
               <img src={device.imageUrl} alt="" className="h-full w-full object-contain p-3" />
             ) : (
-              <span className="text-sm text-slate-500">No image</span>
+              <span className="text-sm text-slate-500">{t('No image')}</span>
             )}
           </div>
           <div className="flex flex-wrap justify-center gap-1.5">
             <Badge tone={device.online ? 'success' : 'default'}>
-              {device.online ? 'Online' : 'Offline'}
+              {device.online ? t('Online') : t('Offline')}
             </Badge>
             <Badge tone="accent">{device.type}</Badge>
             {device.supportsOta ? <Badge>OTA</Badge> : null}
@@ -239,18 +241,18 @@ export function DeviceDetailPage() {
         </Card>
 
         <Card>
-          <CardHeader title="General Information" />
+          <CardHeader title={t('General Information')} />
           <dl className="grid gap-3 sm:grid-cols-2">
-            <Info label="Friendly Name" value={device.friendlyName} />
-            <Info label="IEEE Address" value={device.ieeeAddress} mono />
-            <Info label="Network Address" value={device.networkAddress ?? '—'} />
-            <Info label="Manufacturer" value={device.manufacturer ?? '—'} />
-            <Info label="Model" value={device.model ?? '—'} />
-            <Info label="Power Source" value={device.powerSource ?? '—'} />
-            <Info label="Interview" value={device.interviewStatus} />
-            <Info label="Last Seen" value={formatRelative(device.lastSeen)} />
+            <Info label={t('Friendly Name')} value={device.friendlyName} />
+            <Info label={t('IEEE Address')} value={device.ieeeAddress} mono />
+            <Info label={t('Network Address')} value={device.networkAddress ?? '—'} />
+            <Info label={t('Manufacturer')} value={device.manufacturer ?? '—'} />
+            <Info label={t('Model')} value={device.model ?? '—'} />
+            <Info label={t('Power Source')} value={device.powerSource ?? '—'} />
+            <Info label={t('Interview')} value={device.interviewStatus} />
+            <Info label={t('Last Seen')} value={formatRelative(device.lastSeen)} />
             <Info
-              label="Link Quality"
+              label={t('Link Quality')}
               value={
                 <span className={lqi.color}>
                   {device.linkQuality ?? '—'} ({lqi.label})
@@ -258,7 +260,7 @@ export function DeviceDetailPage() {
               }
             />
             <Info
-              label="Battery"
+              label={t('Battery')}
               value={
                 typeof device.battery === 'number' ? (
                   <span className={batteryColor(device.battery)}>{device.battery}%</span>
@@ -267,8 +269,8 @@ export function DeviceDetailPage() {
                 )
               }
             />
-            <Info label="Firmware" value={device.softwareBuildId ?? '—'} />
-            <Info label="Description" value={device.description ?? '—'} />
+            <Info label={t('Firmware')} value={device.softwareBuildId ?? '—'} />
+            <Info label={t('Description')} value={device.description ?? '—'} />
           </dl>
 
           <form
@@ -282,10 +284,10 @@ export function DeviceDetailPage() {
               className="input"
               value={rename}
               onChange={(event) => setRename(event.target.value)}
-              aria-label="New friendly name"
+              aria-label={t('New friendly name')}
             />
             <button type="submit" className="btn-primary shrink-0">
-              Rename
+              {t('Rename')}
             </button>
           </form>
         </Card>
@@ -293,14 +295,14 @@ export function DeviceDetailPage() {
 
       <Card className="mb-6">
         <CardHeader
-          title="Current values"
-          subtitle="Sensors and controls from Zigbee2MQTT expose metadata"
+          title={t('Current values')}
+          subtitle={t('Sensors and controls from Zigbee2MQTT expose metadata')}
           action={
             <Link
               to="/coordinator"
               className="text-xs text-slate-400 hover:text-ink"
             >
-              Bridge status
+              {t('Bridge status')}
             </Link>
           }
         />
@@ -313,8 +315,8 @@ export function DeviceDetailPage() {
 
       <Card className="mb-6">
         <CardHeader
-          title="Historical Data"
-          subtitle="Selectable ranges with bucketed time series"
+          title={t('Historical Data')}
+          subtitle={t('Selectable ranges with bucketed time series')}
           action={
             <div className="flex flex-wrap gap-1">
               {RANGES.map((item) => (
@@ -328,7 +330,7 @@ export function DeviceDetailPage() {
                   }`}
                   onClick={() => setRange(item.id)}
                 >
-                  {item.label}
+                  {t(item.label)}
                 </button>
               ))}
             </div>
@@ -336,7 +338,7 @@ export function DeviceDetailPage() {
         />
 
         {(propertiesQuery.data?.length ?? 0) === 0 ? (
-          <EmptyState title="No chartable history yet" description="Numeric readings will appear here." />
+          <EmptyState title={t('No chartable history yet')} description={t('Numeric readings will appear here.')} />
         ) : (
           <>
             <div className="mb-4 flex flex-wrap gap-2">
@@ -405,15 +407,15 @@ export function DeviceDetailPage() {
 
       <div className="grid gap-6 xl:grid-cols-2">
         <Card>
-          <CardHeader title="Supported Exposes" subtitle={`${exposes.length} properties`} />
+          <CardHeader title={t('Supported Exposes')} subtitle={`${exposes.length} ${t('properties')}`} />
           <div className="max-h-80 overflow-y-auto scroll-thin">
             <table className="w-full text-left text-sm">
               <thead className="text-xs uppercase text-slate-500">
                 <tr>
-                  <th className="pb-2">Property</th>
-                  <th className="pb-2">Type</th>
-                  <th className="pb-2">Access</th>
-                  <th className="pb-2">Unit</th>
+                  <th className="pb-2">{t('Property')}</th>
+                  <th className="pb-2">{t('Type')}</th>
+                  <th className="pb-2">{t('Access')}</th>
+                  <th className="pb-2">{t('Unit')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -431,21 +433,21 @@ export function DeviceDetailPage() {
         </Card>
 
         <Card>
-          <CardHeader title="Raw MQTT Payload" subtitle="Last state message" />
+          <CardHeader title={t('Raw MQTT Payload')} subtitle={t('Last state message')} />
           <pre className="max-h-80 overflow-auto rounded-xl bg-surface-950/80 p-3 font-mono text-xs text-slate-300 scroll-thin">
             {prettyJson(device.lastPayload ?? {})}
           </pre>
         </Card>
 
         <Card>
-          <CardHeader title="Device Attributes" subtitle="Latest value per property" />
+          <CardHeader title={t('Device Attributes')} subtitle={t('Latest value per property')} />
           <div className="max-h-80 overflow-y-auto scroll-thin">
             <table className="w-full text-left text-sm">
               <thead className="text-xs uppercase text-slate-500">
                 <tr>
-                  <th className="pb-2">Property</th>
-                  <th className="pb-2">Value</th>
-                  <th className="pb-2">Updated</th>
+                  <th className="pb-2">{t('Property')}</th>
+                  <th className="pb-2">{t('Value')}</th>
+                  <th className="pb-2">{t('Updated')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -465,8 +467,8 @@ export function DeviceDetailPage() {
 
         <Card>
           <CardHeader
-            title="OTA Firmware"
-            subtitle={device.supportsOta ? 'Supported by this device' : 'Not advertised'}
+            title={t('OTA Firmware')}
+            subtitle={device.supportsOta ? t('Supported by this device') : t('Not advertised')}
             action={
               device.supportsOta ? (
                 <div className="flex gap-2">
@@ -475,7 +477,7 @@ export function DeviceDetailPage() {
                     className="btn-secondary"
                     onClick={() => void action('OTA check', () => otaApi.check(id))}
                   >
-                    Check
+                    {t('Check')}
                   </button>
                   <button
                     type="button"
@@ -486,20 +488,20 @@ export function DeviceDetailPage() {
                       }
                     }}
                   >
-                    Update
+                    {t('Update')}
                   </button>
                 </div>
               ) : null
             }
           />
           <p className="text-sm text-slate-400">
-            Current build: <span className="text-slate-200">{device.softwareBuildId ?? 'unknown'}</span>
+            {t('Current build')}: <span className="text-slate-200">{device.softwareBuildId ?? t('unknown')}</span>
           </p>
           <p className="mt-2 text-xs text-slate-500">
             Progress is pushed live over WebSocket while Zigbee2MQTT transfers the image.
           </p>
           <Link to="/settings" className="mt-3 inline-block text-xs text-accent-soft hover:underline">
-            View OTA jobs in settings →
+            {t('View OTA jobs in settings →')}
           </Link>
         </Card>
       </div>

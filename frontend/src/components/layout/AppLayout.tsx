@@ -13,9 +13,11 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/AuthContext';
+import { useLanguage } from '@/context/LanguageContext';
 import { useRealtimeBridge } from '@/hooks/useRealtimeBridge';
 import { PairingPromptModal } from '@/components/pairing/PairingPromptModal';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
+import { LanguageToggle } from '@/components/ui/LanguageToggle';
 
 const NAV = [
   { to: '/', label: 'Dashboard', icon: Home },
@@ -29,6 +31,7 @@ const NAV = [
 
 export function AppLayout() {
   const { user, logout } = useAuth();
+  const { t } = useLanguage();
   const { connected } = useRealtimeBridge();
 
   return (
@@ -40,7 +43,7 @@ export function AppLayout() {
           </div>
           <div>
             <p className="text-sm font-semibold text-ink">Zigbee Monitor</p>
-            <p className="text-xs text-slate-400">IoT Platform</p>
+            <p className="text-xs text-slate-400">{t('IoT Platform')}</p>
           </div>
         </div>
 
@@ -60,7 +63,7 @@ export function AppLayout() {
               }
             >
               <item.icon className="h-4 w-4" />
-              {item.label}
+              {t(item.label)}
             </NavLink>
           ))}
         </nav>
@@ -69,13 +72,14 @@ export function AppLayout() {
           <div className="flex items-center justify-between px-2 text-xs">
             <span className="flex items-center gap-1.5 text-slate-400">
               <Wifi className={cn('h-3.5 w-3.5', connected ? 'text-success' : 'text-danger')} />
-              {connected ? 'Live' : 'Offline'}
+              {connected ? t('Live') : t('Offline')}
             </span>
+            <LanguageToggle />
             <ThemeToggle />
           </div>
           <div className="flex items-center justify-between rounded-xl bg-ink/5 px-3 py-2">
             <div className="min-w-0">
-              <p className="truncate text-sm text-slate-200">{user?.email ?? 'Guest'}</p>
+              <p className="truncate text-sm text-slate-200">{user?.email ?? t('Guest')}</p>
               <p className="truncate text-xs text-slate-500">
                 {(user?.roles ?? []).join(', ') || 'viewer'}
               </p>
@@ -84,7 +88,7 @@ export function AppLayout() {
               type="button"
               onClick={logout}
               className="rounded-lg p-1.5 text-slate-400 hover:bg-ink/10 hover:text-ink"
-              aria-label="Sign out"
+              aria-label={t('Sign out')}
             >
               <LogOut className="h-4 w-4" />
             </button>
@@ -101,8 +105,9 @@ export function AppLayout() {
           <div className="flex items-center gap-2">
             <span className="flex items-center gap-1.5 text-xs text-slate-400">
               <Wifi className={cn('h-3.5 w-3.5', connected ? 'text-success' : 'text-danger')} />
-              {connected ? 'Live' : 'Offline'}
+              {connected ? t('Live') : t('Offline')}
             </span>
+            <LanguageToggle />
             <ThemeToggle />
           </div>
         </header>
@@ -120,7 +125,7 @@ export function AppLayout() {
                 )
               }
             >
-              {item.label}
+              {t(item.label)}
             </NavLink>
           ))}
         </nav>

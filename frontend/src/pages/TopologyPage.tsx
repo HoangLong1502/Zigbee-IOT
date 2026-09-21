@@ -4,6 +4,7 @@ import { RefreshCw } from 'lucide-react';
 import { topologyApi, apiErrorMessage } from '@/lib/api';
 import type { TopologyEdge, TopologyNode } from '@/types';
 import { formatAbsolute, formatRelative } from '@/lib/utils';
+import { useLanguage } from '@/context/LanguageContext';
 import {
   Badge,
   Card,
@@ -110,6 +111,7 @@ function edgeColor(quality: number): string {
 }
 
 export function TopologyPage() {
+  const { t } = useLanguage();
   const queryClient = useQueryClient();
   const [selected, setSelected] = useState<string | null>(null);
   const svgRef = useRef<SVGSVGElement | null>(null);
@@ -144,8 +146,8 @@ export function TopologyPage() {
   return (
     <div>
       <PageHeader
-        title="Network Topology"
-        description="Coordinator, routers, end devices and parent-child link quality"
+        title={t('Network Topology')}
+        description={t('Coordinator, routers, end devices and parent-child link quality')}
         actions={
           <button
             type="button"
@@ -154,7 +156,7 @@ export function TopologyPage() {
             onClick={() => refresh.mutate()}
           >
             {refresh.isPending ? <Spinner /> : <RefreshCw className="h-4 w-4" />}
-            Scan network
+            {t('Scan network')}
           </button>
         }
       />
@@ -171,20 +173,20 @@ export function TopologyPage() {
         </div>
       ) : !data || data.nodes.length === 0 ? (
         <EmptyState
-          title="No topology snapshot yet"
-          description="Click “Scan network” to walk every router neighbour table through Zigbee2MQTT. This can take a minute."
+          title={t('No topology snapshot yet')}
+          description={t('Click “Scan network” to walk every router neighbour table through Zigbee2MQTT. This can take a minute.')}
         />
       ) : (
         <>
           <div className="mb-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-            <StatCard label="Coordinators" value={data.stats.coordinators} />
-            <StatCard label="Routers" value={data.stats.routers} tone="accent" />
-            <StatCard label="End Devices" value={data.stats.endDevices} />
-            <StatCard label="Links" value={data.stats.links} />
+            <StatCard label={t('Coordinators')} value={data.stats.coordinators} />
+            <StatCard label={t('Routers')} value={data.stats.routers} tone="accent" />
+            <StatCard label={t('End Devices')} value={data.stats.endDevices} />
+            <StatCard label={t('Links')} value={data.stats.links} />
             <StatCard
               label="Avg LQI"
               value={data.stats.averageLinkQuality}
-              hint={`${data.stats.weakLinks} weak`}
+              hint={`${data.stats.weakLinks} ${t('weak')}`}
               tone={data.stats.weakLinks > 0 ? 'warning' : 'success'}
             />
           </div>
@@ -264,28 +266,28 @@ export function TopologyPage() {
                 })}
               </svg>
               <p className="border-t border-ink/5 px-4 py-2 text-xs text-slate-500">
-                Last scan {data.generatedAt ? formatAbsolute(data.generatedAt) : '—'} ·
-                Auto-refreshes when a new snapshot arrives over WebSocket
+                {t('Last scan')} {data.generatedAt ? formatAbsolute(data.generatedAt) : '—'} ·{' '}
+                {t('Auto-refreshes when a new snapshot arrives over WebSocket')}
               </p>
             </Card>
 
             <Card>
-              <CardHeader title="Node details" />
+              <CardHeader title={t('Node details')} />
               {selectedNode ? (
                 <div className="space-y-3 text-sm">
                   <p className="text-base font-medium text-ink">{selectedNode.friendlyName}</p>
                   <Badge tone="accent">{selectedNode.type}</Badge>
-                  {selectedNode.failed ? <Badge tone="danger">Scan failed</Badge> : null}
+                  {selectedNode.failed ? <Badge tone="danger">{t('Scan failed')}</Badge> : null}
                   <Info label="IEEE" value={selectedNode.ieeeAddress} />
                   <Info label="NWK" value={String(selectedNode.networkAddress)} />
-                  <Info label="Manufacturer" value={selectedNode.manufacturer ?? '—'} />
-                  <Info label="Model" value={selectedNode.model ?? '—'} />
+                  <Info label={t('Manufacturer')} value={selectedNode.manufacturer ?? '—'} />
+                  <Info label={t('Model')} value={selectedNode.model ?? '—'} />
                   <Info
-                    label="Last seen"
+                    label={t('Last seen')}
                     value={selectedNode.lastSeen ? formatRelative(selectedNode.lastSeen) : '—'}
                   />
                   <div>
-                    <p className="mb-1 text-xs uppercase text-slate-500">Links</p>
+                    <p className="mb-1 text-xs uppercase text-slate-500">{t('Links')}</p>
                     <ul className="space-y-1">
                       {data.edges
                         .filter(
@@ -314,7 +316,7 @@ export function TopologyPage() {
                   </div>
                 </div>
               ) : (
-                <p className="text-sm text-slate-400">Select a node</p>
+                <p className="text-sm text-slate-400">{t('Select a node')}</p>
               )}
             </Card>
           </div>

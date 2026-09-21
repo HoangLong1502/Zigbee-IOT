@@ -6,6 +6,7 @@ import { realtime } from '@/lib/realtime';
 import { WS_EVENTS } from '@/lib/ws-events';
 import { formatAbsolute, prettyJson } from '@/lib/utils';
 import type { MqttLogEntry } from '@/types';
+import { useLanguage } from '@/context/LanguageContext';
 import {
   Badge,
   Card,
@@ -17,6 +18,7 @@ import {
 const MAX_LIVE = 500;
 
 export function MqttLogsPage() {
+  const { t } = useLanguage();
   const [live, setLive] = useState(true);
   const [paused, setPaused] = useState(false);
   const [search, setSearch] = useState('');
@@ -88,8 +90,8 @@ export function MqttLogsPage() {
   return (
     <div>
       <PageHeader
-        title="MQTT Logs"
-        description="Live traffic between Zigbee2MQTT, Mosquitto and the backend"
+        title={t('MQTT Logs')}
+        description={t('Live traffic between Zigbee2MQTT, Mosquitto and the backend')}
         actions={
           <>
             <button
@@ -97,7 +99,7 @@ export function MqttLogsPage() {
               className="btn-secondary"
               onClick={() => setLive((value) => !value)}
             >
-              {live ? 'Show history' : 'Show live'}
+              {live ? t('Show history') : t('Show live')}
             </button>
             {live ? (
               <button
@@ -106,17 +108,17 @@ export function MqttLogsPage() {
                 onClick={() => setPaused((value) => !value)}
               >
                 {paused ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}
-                {paused ? 'Resume' : 'Pause'}
+                {paused ? t('Resume') : t('Pause')}
               </button>
             ) : null}
             <button type="button" className="btn-secondary" onClick={() => void exportJson()}>
-              <Download className="h-4 w-4" /> Export JSON
+              <Download className="h-4 w-4" /> {t('Export JSON')}
             </button>
             <button
               type="button"
               className="btn-danger"
               onClick={() => {
-                if (confirm('Delete all stored MQTT logs?')) {
+                if (confirm(t('Delete all stored MQTT logs?'))) {
                   void mqttApi.clear().then(() => {
                     setLiveRows([]);
                     void historyQuery.refetch();
@@ -124,7 +126,7 @@ export function MqttLogsPage() {
                 }
               }}
             >
-              <Trash2 className="h-4 w-4" /> Clear
+              <Trash2 className="h-4 w-4" /> {t('Clear')}
             </button>
           </>
         }
@@ -133,13 +135,13 @@ export function MqttLogsPage() {
       <div className="mb-4 grid gap-3 sm:grid-cols-3">
         <input
           className="input"
-          placeholder="Search topic or payload…"
+          placeholder={t('Search topic or payload…')}
           value={search}
           onChange={(event) => setSearch(event.target.value)}
         />
         <input
           className="input"
-          placeholder="Filter topic…"
+          placeholder={t('Filter topic…')}
           value={topic}
           onChange={(event) => setTopic(event.target.value)}
         />
@@ -148,19 +150,19 @@ export function MqttLogsPage() {
           value={direction}
           onChange={(event) => setDirection(event.target.value)}
         >
-          <option value="">All directions</option>
-          <option value="inbound">Inbound</option>
-          <option value="outbound">Outbound</option>
+          <option value="">{t('All directions')}</option>
+          <option value="inbound">{t('Inbound')}</option>
+          <option value="outbound">{t('Outbound')}</option>
         </select>
       </div>
 
       <Card className="p-0">
         <div className="grid grid-cols-[160px_1fr_70px_90px_1.2fr] gap-2 border-b border-ink/5 px-4 py-2 text-[11px] uppercase tracking-wide text-slate-500">
-          <span>Timestamp</span>
-          <span>Topic</span>
+          <span>{t('Timestamp')}</span>
+          <span>{t('Topic')}</span>
           <span>QoS</span>
-          <span>Direction</span>
-          <span>Payload / Device</span>
+          <span>{t('Direction')}</span>
+          <span>{t('Payload / Device')}</span>
         </div>
 
         {!live && historyQuery.isLoading ? (
@@ -170,11 +172,11 @@ export function MqttLogsPage() {
         ) : rows.length === 0 ? (
           <div className="p-6">
             <EmptyState
-              title="No messages"
+              title={t('No messages')}
               description={
                 live
-                  ? 'Waiting for MQTT traffic…'
-                  : 'Nothing matched the current filters.'
+                  ? t('Waiting for MQTT traffic…')
+                  : t('Nothing matched the current filters.')
               }
             />
           </div>

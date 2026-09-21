@@ -12,6 +12,8 @@ import {
   Spinner,
 } from '@/components/ui/Card';
 import { ThemePicker } from '@/components/ui/ThemeToggle';
+import { LanguagePicker } from '@/components/ui/LanguageToggle';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface ThresholdForm {
   lowBatteryPercent: number;
@@ -19,6 +21,7 @@ interface ThresholdForm {
 }
 
 export function SettingsPage() {
+  const { t } = useLanguage();
   const queryClient = useQueryClient();
   const settingsQuery = useQuery({ queryKey: ['settings'], queryFn: settingsApi.get });
   const otaQuery = useQuery({ queryKey: ['ota'], queryFn: otaApi.jobs });
@@ -46,21 +49,29 @@ export function SettingsPage() {
   return (
     <div>
       <PageHeader
-        title="Settings"
-        description="Theme, alert thresholds, MQTT identity and OTA job history"
+        title={t('Settings')}
+        description={t('Theme, language, alert thresholds, MQTT identity and OTA job history')}
       />
 
       <div className="grid gap-6 xl:grid-cols-2">
         <Card>
           <CardHeader
-            title="Appearance"
-            subtitle="Light and dark backgrounds for the monitoring UI"
+            title={t('Appearance')}
+            subtitle={t('Light and dark backgrounds for the monitoring UI')}
           />
           <ThemePicker />
         </Card>
 
         <Card>
-          <CardHeader title="Alert Thresholds" />
+          <CardHeader
+            title={t('Language')}
+            subtitle={t('Choose the language used throughout the interface')}
+          />
+          <LanguagePicker />
+        </Card>
+
+        <Card>
+          <CardHeader title={t('Alert Thresholds')} />
           {settingsQuery.isLoading ? (
             <Spinner />
           ) : (
@@ -69,7 +80,7 @@ export function SettingsPage() {
               onSubmit={form.handleSubmit((values) => save.mutate(values))}
             >
               <label className="block">
-                <span className="label">Low battery percent</span>
+                <span className="label">{t('Low battery percent')}</span>
                 <input
                   className="input"
                   type="number"
@@ -79,7 +90,7 @@ export function SettingsPage() {
                 />
               </label>
               <label className="block">
-                <span className="label">High temperature (°C)</span>
+                <span className="label">{t('High temperature (°C)')}</span>
                 <input
                   className="input"
                   type="number"
@@ -88,41 +99,41 @@ export function SettingsPage() {
               </label>
               <button type="submit" className="btn-primary" disabled={save.isPending}>
                 {save.isPending ? <Spinner /> : null}
-                Save thresholds
+                {t('Save thresholds')}
               </button>
               {save.isError ? (
                 <p className="text-sm text-danger">{apiErrorMessage(save.error)}</p>
               ) : null}
               {save.isSuccess ? (
-                <p className="text-sm text-success">Thresholds updated for this process</p>
+                <p className="text-sm text-success">{t('Thresholds updated for this process')}</p>
               ) : null}
             </form>
           )}
         </Card>
 
         <Card>
-          <CardHeader title="Platform" />
+          <CardHeader title={t('Platform')} />
           {settings ? (
             <dl className="space-y-3 text-sm">
-              <Row label="Version" value={settings.version} />
+              <Row label={t('Version')} value={settings.version} />
               <Row label="MQTT URL" value={settings.mqtt?.url} />
-              <Row label="Base topic" value={settings.mqtt?.baseTopic} />
+              <Row label={t('Base topic')} value={settings.mqtt?.baseTopic} />
               <Row label="Client ID" value={settings.mqtt?.clientId} />
               <Row
-                label="Auth"
-                value={settings.authEnabled ? 'Enabled' : 'Disabled'}
+                label={t('Auth')}
+                value={settings.authEnabled ? t('Enabled') : t('Disabled')}
               />
               <Row
-                label="History retention"
-                value={`${settings.retention?.historyRetentionDays ?? '—'} days`}
+                label={t('History retention')}
+                value={`${settings.retention?.historyRetentionDays ?? '—'} ${t('days')}`}
               />
               <Row
-                label="MQTT log retention"
-                value={`${settings.retention?.mqttLogRetentionHours ?? '—'} hours`}
+                label={t('MQTT log retention')}
+                value={`${settings.retention?.mqttLogRetentionHours ?? '—'} ${t('hours')}`}
               />
               <Row
-                label="Offline timeout"
-                value={`${settings.retention?.deviceOfflineTimeoutMinutes ?? '—'} minutes`}
+                label={t('Offline timeout')}
+                value={`${settings.retention?.deviceOfflineTimeoutMinutes ?? '—'} ${t('minutes')}`}
               />
             </dl>
           ) : (
@@ -131,19 +142,19 @@ export function SettingsPage() {
         </Card>
 
         <Card className="xl:col-span-2">
-          <CardHeader title="OTA Jobs" subtitle="Firmware update history" />
+          <CardHeader title={t('OTA Jobs')} subtitle={t('Firmware update history')} />
           {(otaQuery.data?.length ?? 0) === 0 ? (
-            <EmptyState title="No OTA jobs yet" />
+            <EmptyState title={t('No OTA jobs yet')} />
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">
                 <thead className="text-xs uppercase text-slate-500">
                   <tr>
-                    <th className="pb-2">Device</th>
-                    <th className="pb-2">Status</th>
-                    <th className="pb-2">Progress</th>
-                    <th className="pb-2">Versions</th>
-                    <th className="pb-2">Started</th>
+                    <th className="pb-2">{t('Device')}</th>
+                    <th className="pb-2">{t('Status')}</th>
+                    <th className="pb-2">{t('Progress')}</th>
+                    <th className="pb-2">{t('Versions')}</th>
+                    <th className="pb-2">{t('Started')}</th>
                   </tr>
                 </thead>
                 <tbody>

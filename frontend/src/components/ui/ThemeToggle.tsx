@@ -1,9 +1,11 @@
 import { Check, Moon, Sun } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTheme, type Theme } from '@/context/ThemeContext';
+import { useLanguage } from '@/context/LanguageContext';
 
 export function ThemeToggle({ className }: { className?: string }) {
   const { theme, toggle } = useTheme();
+  const { t } = useLanguage();
 
   return (
     <button
@@ -13,7 +15,7 @@ export function ThemeToggle({ className }: { className?: string }) {
         'rounded-lg p-1.5 text-slate-400 transition hover:bg-ink/5 hover:text-ink',
         className,
       )}
-      aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+      aria-label={theme === 'dark' ? t('Switch to light mode') : t('Switch to dark mode')}
     >
       {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
     </button>
@@ -22,19 +24,20 @@ export function ThemeToggle({ className }: { className?: string }) {
 
 export function ThemePicker() {
   const { theme, setTheme } = useTheme();
+  const { t } = useLanguage();
 
   return (
     <div className="grid grid-cols-2 gap-3">
       <ThemeOption
         value="light"
-        label="Light"
+        label={t('Light')}
         active={theme === 'light'}
         onSelect={setTheme}
         previewClass="from-[#eef2f7] to-white"
       />
       <ThemeOption
         value="dark"
-        label="Dark"
+        label={t('Dark')}
         active={theme === 'dark'}
         onSelect={setTheme}
         previewClass="from-[#1e293b] to-[#020617]"

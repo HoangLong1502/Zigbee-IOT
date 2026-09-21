@@ -1,18 +1,20 @@
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { formatDistanceToNow, format, parseISO } from 'date-fns';
+import { enUS, vi } from 'date-fns/locale';
 
 export function cn(...inputs: ClassValue[]): string {
   return twMerge(clsx(inputs));
 }
 
 export function formatRelative(value: string | Date | null | undefined): string {
-  if (!value) return 'never';
+  const isVietnamese = typeof document !== 'undefined' && document.documentElement.lang === 'vi';
+  if (!value) return isVietnamese ? 'chưa bao giờ' : 'never';
   try {
     const date = typeof value === 'string' ? parseISO(value) : value;
-    return formatDistanceToNow(date, { addSuffix: true });
+    return formatDistanceToNow(date, { addSuffix: true, locale: isVietnamese ? vi : enUS });
   } catch {
-    return 'unknown';
+    return isVietnamese ? 'không rõ' : 'unknown';
   }
 }
 
@@ -32,14 +34,15 @@ export function linkQualityInfo(lqi: number | null | undefined): {
   color: string;
   percent: number;
 } {
+  const isVietnamese = typeof document !== 'undefined' && document.documentElement.lang === 'vi';
   if (lqi === null || lqi === undefined) {
     return { label: 'n/a', color: 'text-slate-500', percent: 0 };
   }
   const percent = Math.round((Math.min(lqi, 255) / 255) * 100);
-  if (percent >= 70) return { label: 'Excellent', color: 'text-success', percent };
-  if (percent >= 40) return { label: 'Good', color: 'text-accent-soft', percent };
-  if (percent >= 20) return { label: 'Fair', color: 'text-warning', percent };
-  return { label: 'Weak', color: 'text-danger', percent };
+  if (percent >= 70) return { label: isVietnamese ? 'Xuất sắc' : 'Excellent', color: 'text-success', percent };
+  if (percent >= 40) return { label: isVietnamese ? 'Tốt' : 'Good', color: 'text-accent-soft', percent };
+  if (percent >= 20) return { label: isVietnamese ? 'Trung bình' : 'Fair', color: 'text-warning', percent };
+  return { label: isVietnamese ? 'Yếu' : 'Weak', color: 'text-danger', percent };
 }
 
 export function batteryColor(percent: number | null | undefined): string {

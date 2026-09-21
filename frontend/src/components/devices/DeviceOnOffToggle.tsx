@@ -3,6 +3,7 @@ import { Power } from 'lucide-react';
 import { devicesApi, apiErrorMessage } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import type { Device, DeviceExpose } from '@/types';
+import { useLanguage } from '@/context/LanguageContext';
 
 const ACCESS_SET = 0b010;
 
@@ -112,6 +113,7 @@ export function DeviceOnOffToggle({
   size = 'md',
   className,
 }: DeviceOnOffToggleProps) {
+  const { t } = useLanguage();
   const queryClient = useQueryClient();
   const channels = getSwitchChannels(device).filter((channel) =>
     property ? channel.property === property : true,
@@ -139,7 +141,7 @@ export function DeviceOnOffToggle({
         <button
           key={channel.property}
           type="button"
-          title={`${channel.label}: ${channel.isOn ? 'ON' : 'OFF'} (click to toggle)`}
+          title={`${channel.label}: ${channel.isOn ? t('ON') : t('OFF')} (${t('click to toggle')})`}
           disabled={mutation.isPending || !device.online}
           aria-pressed={channel.isOn}
           className={cn(
@@ -166,9 +168,9 @@ export function DeviceOnOffToggle({
           />
           {channels.length === 1
             ? channel.isOn
-              ? 'ON'
-              : 'OFF'
-            : `${channel.label}: ${channel.isOn ? 'ON' : 'OFF'}`}
+              ? t('ON')
+              : t('OFF')
+            : `${channel.label}: ${channel.isOn ? t('ON') : t('OFF')}`}
         </button>
       ))}
       {mutation.isError ? (
