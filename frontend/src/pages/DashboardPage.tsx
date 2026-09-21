@@ -12,9 +12,11 @@ import {
 import { motion } from 'framer-motion';
 import { dashboardApi } from '@/lib/api';
 import { formatRelative, humanizeProperty, linkQualityInfo } from '@/lib/utils';
+import { useLanguage } from '@/context/LanguageContext';
 import { Badge, Card, CardHeader, EmptyState, PageHeader, Spinner, StatCard } from '@/components/ui/Card';
 
 export function DashboardPage() {
+  const { t } = useLanguage();
   const { data, isLoading, error } = useQuery({
     queryKey: ['dashboard'],
     queryFn: dashboardApi.summary,
@@ -32,8 +34,8 @@ export function DashboardPage() {
   if (error || !data) {
     return (
       <EmptyState
-        title="Dashboard unavailable"
-        description="Is the NestJS backend running and connected to PostgreSQL?"
+        title={t('Dashboard unavailable')}
+        description={t('Is the NestJS backend running and connected to PostgreSQL?')}
       />
     );
   }
@@ -43,31 +45,31 @@ export function DashboardPage() {
   return (
     <div>
       <PageHeader
-        title="Dashboard"
-        description="Live overview of your Zigbee network"
+        title={t('Dashboard')}
+        description={t('Live overview of your Zigbee network')}
       />
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
-          label="Total Devices"
+          label={t('Total Devices')}
           value={stats.total}
-          hint={`${stats.routers} routers · ${stats.endDevices} end devices`}
+          hint={`${stats.routers} ${t('Routers').toLowerCase()} · ${stats.endDevices} ${t('End devices').toLowerCase()}`}
           icon={<Cpu className="h-5 w-5" />}
           tone="accent"
         />
         <StatCard
-          label="Online"
+          label={t('Online')}
           value={stats.online}
-          hint={`${stats.offline} offline`}
+          hint={`${stats.offline} ${t('Offline').toLowerCase()}`}
           icon={<Wifi className="h-5 w-5" />}
           tone="success"
         />
         <StatCard
-          label="Coordinator"
-          value={coordinator.online ? 'Online' : 'Offline'}
+          label={t('Coordinator')}
+          value={coordinator.online ? t('Online') : t('Offline')}
           hint={
             coordinator.permitJoin
-              ? 'Permit join OPEN'
+              ? t('Permit join OPEN')
               : `Ch ${coordinator.channel ?? '—'} · PAN ${coordinator.panId ?? '—'}`
           }
           icon={<Radio className="h-5 w-5" />}
@@ -75,7 +77,7 @@ export function DashboardPage() {
         />
         <StatCard
           label="MQTT"
-          value={mqtt.connected ? 'Connected' : 'Down'}
+          value={mqtt.connected ? t('Connected') : t('Down')}
           hint={`${stats.messagesLastHour} msgs / last hour`}
           icon={mqtt.connected ? <Activity className="h-5 w-5" /> : <WifiOff className="h-5 w-5" />}
           tone={mqtt.connected ? 'success' : 'danger'}
@@ -84,26 +86,26 @@ export function DashboardPage() {
 
       <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
-          label="Network Health"
+          label={t('Network Health')}
           value={`${stats.networkHealth}%`}
           hint={`Avg LQI ${stats.averageLinkQuality}`}
           tone={stats.networkHealth >= 70 ? 'success' : stats.networkHealth >= 40 ? 'warning' : 'danger'}
         />
         <StatCard
-          label="Low Battery"
+          label={t('Low Battery')}
           value={stats.lowBattery}
           icon={<Battery className="h-5 w-5" />}
           tone={stats.lowBattery > 0 ? 'warning' : 'default'}
         />
         <StatCard
-          label="Active Alerts"
+          label={t('Active Alerts')}
           value={alerts.active}
           hint={`${alerts.critical} critical · ${alerts.unacknowledged} unread`}
           icon={<AlertTriangle className="h-5 w-5" />}
           tone={alerts.critical > 0 ? 'danger' : alerts.active > 0 ? 'warning' : 'default'}
         />
         <StatCard
-          label="Battery Devices"
+          label={t('Battery Devices')}
           value={stats.batteryPowered}
           hint={`${stats.unsupported} unsupported`}
         />
@@ -112,18 +114,18 @@ export function DashboardPage() {
       <div className="mt-6 grid gap-6 xl:grid-cols-2">
         <Card>
           <CardHeader
-            title="Latest Sensor Readings"
-            subtitle="Online devices with a recent payload"
+            title={t('Latest Sensor Readings')}
+            subtitle={t('Online devices with a recent payload')}
             action={
               <Link to="/devices" className="text-xs text-accent-soft hover:underline">
-                View all
+                {t('View all')}
               </Link>
             }
           />
           {latestReadings.length === 0 ? (
             <EmptyState
-              title="No readings yet"
-              description="Pair a device and open permit join to start receiving data."
+              title={t('No readings yet')}
+              description={t('Pair a device and open permit join to start receiving data.')}
             />
           ) : (
             <div className="space-y-3">
@@ -150,7 +152,7 @@ export function DashboardPage() {
                             {reading.friendlyName}
                           </p>
                           <p className="truncate text-xs text-slate-500">
-                            {reading.model ?? 'Unknown model'} · {formatRelative(reading.lastSeen)}
+                            {reading.model ?? t('Unknown model')} · {formatRelative(reading.lastSeen)}
                           </p>
                         </div>
                         <div className="flex shrink-0 items-center gap-2">
@@ -187,16 +189,16 @@ export function DashboardPage() {
 
         <Card>
           <CardHeader
-            title="Recent Events"
-            subtitle="Joins, leaves, interviews and bridge logs"
+            title={t('Recent Events')}
+            subtitle={t('Joins, leaves, interviews and bridge logs')}
             action={
               <Link to="/alerts" className="text-xs text-accent-soft hover:underline">
-                Alerts
+                {t('Alerts')}
               </Link>
             }
           />
           {recentEvents.length === 0 ? (
-            <EmptyState title="No events yet" />
+            <EmptyState title={t('No events yet')} />
           ) : (
             <ul className="max-h-[32rem] space-y-2 overflow-y-auto scroll-thin pr-1">
               {recentEvents.map((event) => (

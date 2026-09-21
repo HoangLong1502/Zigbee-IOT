@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Power, Radar, RefreshCw, ShieldCheck, Zap } from 'lucide-react';
 import { coordinatorApi, apiErrorMessage } from '@/lib/api';
 import { formatRelative } from '@/lib/utils';
+import { useLanguage } from '@/context/LanguageContext';
 import {
   Badge,
   Card,
@@ -26,6 +27,7 @@ interface FormValues {
 }
 
 export function CoordinatorPage() {
+  const { t } = useLanguage();
   const queryClient = useQueryClient();
   const [syncSeconds, setSyncSeconds] = useState(120);
   const [syncMessage, setSyncMessage] = useState<string | null>(null);
@@ -135,7 +137,7 @@ export function CoordinatorPage() {
   if (error || !data) {
     return (
       <EmptyState
-        title="Coordinator unavailable"
+        title={t('Coordinator unavailable')}
         description={error ? apiErrorMessage(error) : 'No data'}
       />
     );
@@ -147,8 +149,8 @@ export function CoordinatorPage() {
   return (
     <div>
       <PageHeader
-        title="Coordinator"
-        description="USB Zigbee coordinator detection and network settings"
+        title={t('Coordinator')}
+        description={t('USB Zigbee coordinator detection and network settings')}
         actions={
           <>
             <button
@@ -157,16 +159,16 @@ export function CoordinatorPage() {
               onClick={() => permitJoin.mutate(!data.permitJoin)}
             >
               <ShieldCheck className="h-4 w-4" />
-              {data.permitJoin ? 'Disable Permit Join' : 'Enable Permit Join'}
+              {data.permitJoin ? t('Disable Permit Join') : t('Enable Permit Join')}
             </button>
             <button
               type="button"
               className="btn-secondary"
               onClick={() => {
-                if (confirm('Restart Zigbee2MQTT?')) restart.mutate();
+                if (confirm(t('Restart Zigbee2MQTT?'))) restart.mutate();
               }}
             >
-              <Power className="h-4 w-4" /> Restart bridge
+              <Power className="h-4 w-4" /> {t('Restart bridge')}
             </button>
           </>
         }
@@ -174,13 +176,13 @@ export function CoordinatorPage() {
 
       <div className="mb-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
-          label="Bridge"
-          value={data.online ? 'Online' : 'Offline'}
+          label={t('Bridge')}
+          value={data.online ? t('Online') : t('Offline')}
           tone={data.online ? 'success' : 'danger'}
         />
         <StatCard
-          label="Permit Join"
-          value={data.permitJoin ? 'Open' : 'Closed'}
+          label={t('Permit Join')}
+          value={data.permitJoin ? t('Open') : t('Closed')}
           hint={
             data.permitJoinTimeout
               ? `${data.permitJoinTimeout}s remaining`
@@ -189,18 +191,18 @@ export function CoordinatorPage() {
           tone={data.permitJoin ? 'warning' : 'default'}
         />
         <StatCard
-          label="Pairing mode"
-          value={isAuto ? 'Auto' : 'Manual'}
+          label={t('Pairing mode')}
+          value={isAuto ? t('Auto') : t('Manual')}
           hint={isAuto ? 'Nearby devices trigger a pair prompt' : 'Sync to open join'}
           tone={isAuto ? 'accent' : 'default'}
           icon={<Radar className="h-5 w-5" />}
         />
-        <StatCard label="Channel" value={data.channel ?? '—'} hint={data.firmwareVersion ?? undefined} />
+        <StatCard label={t('Channel')} value={data.channel ?? '—'} hint={data.firmwareVersion ?? undefined} />
       </div>
 
       <Card className="mb-6">
         <CardHeader
-          title="Device discovery"
+          title={t('Device discovery')}
           subtitle="Keep join open for nearby devices (auto) or open it only when you sync (manual). Either way you confirm each pair."
         />
 
@@ -217,8 +219,8 @@ export function CoordinatorPage() {
           >
             <div className="mb-2 flex items-center gap-2">
               <Zap className="h-4 w-4 text-accent-soft" />
-              <span className="font-medium text-slate-100">Auto-pair (nearby)</span>
-              {isAuto ? <Badge tone="accent">Active</Badge> : null}
+              <span className="font-medium text-slate-100">{t('Auto-pair (nearby)')}</span>
+              {isAuto ? <Badge tone="accent">{t('Active')}</Badge> : null}
             </div>
             <p className="text-sm text-slate-400">
               Keep the Zigbee network open. When a device in pairing mode is within
@@ -238,8 +240,8 @@ export function CoordinatorPage() {
           >
             <div className="mb-2 flex items-center gap-2">
               <RefreshCw className="h-4 w-4 text-slate-300" />
-              <span className="font-medium text-slate-100">Manual sync</span>
-              {!isAuto ? <Badge>Active</Badge> : null}
+              <span className="font-medium text-slate-100">{t('Manual sync')}</span>
+              {!isAuto ? <Badge>{t('Active')}</Badge> : null}
             </div>
             <p className="text-sm text-slate-400">
               Safer for a stable network: the join window only opens when you press Sync.
@@ -249,7 +251,7 @@ export function CoordinatorPage() {
 
         <div className="flex flex-col gap-3 rounded-2xl border border-ink/5 bg-ink/[0.02] p-4 sm:flex-row sm:items-end">
           <label className="block flex-1">
-            <span className="label">Sync window (seconds)</span>
+            <span className="label">{t('Sync window (seconds)')}</span>
             <input
               className="input"
               type="number"
@@ -266,7 +268,7 @@ export function CoordinatorPage() {
             onClick={() => manualSync.mutate()}
           >
             {manualSync.isPending ? <Spinner /> : <Radar className="h-4 w-4" />}
-            Run Manual Sync
+            {t('Run Manual Sync')}
           </button>
         </div>
 
@@ -302,26 +304,26 @@ export function CoordinatorPage() {
 
       <div className="grid gap-6 xl:grid-cols-2">
         <Card>
-          <CardHeader title="Coordinator Information" />
+          <CardHeader title={t('Coordinator Information')} />
           <dl className="grid gap-3 sm:grid-cols-2 text-sm">
-            <Info label="IEEE Address" value={data.ieeeAddress ?? '—'} />
+            <Info label={t('IEEE Address')} value={data.ieeeAddress ?? '—'} />
             <Info label="PAN ID" value={data.panId ?? '—'} />
-            <Info label="Extended PAN ID" value={data.extendedPanId ?? '—'} />
-            <Info label="Channel" value={data.channel ?? '—'} />
-            <Info label="Serial Port" value={data.serialPort ?? '—'} />
-            <Info label="Baud Rate" value={data.baudRate ?? '—'} />
-            <Info label="Adapter" value={data.adapter ?? '—'} />
+            <Info label={t('Extended PAN ID')} value={data.extendedPanId ?? '—'} />
+            <Info label={t('Channel')} value={data.channel ?? '—'} />
+            <Info label={t('Serial Port')} value={data.serialPort ?? '—'} />
+            <Info label={t('Baud Rate')} value={data.baudRate ?? '—'} />
+            <Info label={t('Adapter')} value={data.adapter ?? '—'} />
             <Info label="Hardware" value={data.hardwareLabel ?? '—'} />
             <Info label="Zigbee2MQTT" value={data.zigbee2mqttVersion ?? '—'} />
-            <Info label="Firmware" value={data.firmwareVersion ?? '—'} />
-            <Info label="Last seen" value={formatRelative(data.lastSeen)} />
-            <Info label="Restart required" value={data.restartRequired ? 'Yes' : 'No'} />
+            <Info label={t('Firmware')} value={data.firmwareVersion ?? '—'} />
+            <Info label={t('Last seen')} value={formatRelative(data.lastSeen)} />
+            <Info label={t('Restart required')} value={data.restartRequired ? t('Yes') : t('No')} />
           </dl>
         </Card>
 
         <Card>
           <CardHeader
-            title="Detected USB Ports"
+            title={t('Detected USB Ports')}
             subtitle={
               data.detectionAvailable
                 ? 'Auto-detected Zigbee coordinators are highlighted'
@@ -333,13 +335,13 @@ export function CoordinatorPage() {
                 className="btn-secondary"
                 onClick={() => void queryClient.invalidateQueries({ queryKey: ['coordinator'] })}
               >
-                <RefreshCw className="h-4 w-4" /> Rescan
+                <RefreshCw className="h-4 w-4" /> {t('Rescan')}
               </button>
             }
           />
           {data.detectedPorts.length === 0 ? (
             <EmptyState
-              title="No serial ports found"
+              title={t('No serial ports found')}
               description="On Windows run Zigbee2MQTT natively and set the COM port below. Docker Desktop cannot pass COM ports through."
             />
           ) : (
@@ -352,15 +354,15 @@ export function CoordinatorPage() {
                   <div>
                     <p className="font-mono text-sm text-slate-100">{port.path}</p>
                     <p className="text-xs text-slate-500">
-                      {port.label ?? port.manufacturer ?? 'Unknown device'}
+                      {port.label ?? port.manufacturer ?? t('Unknown device')}
                       {port.vendorId ? ` · ${port.vendorId}:${port.productId}` : ''}
                     </p>
                   </div>
                   <div className="flex flex-col items-end gap-1">
                     {port.isZigbeeCoordinator ? (
-                      <Badge tone="success">Coordinator</Badge>
+                      <Badge tone="success">{t('Coordinator')}</Badge>
                     ) : (
-                      <Badge>Other</Badge>
+                      <Badge>{t('Other')}</Badge>
                     )}
                     <button
                       type="button"
@@ -371,7 +373,7 @@ export function CoordinatorPage() {
                         if (port.suggestedBaudRate) form.setValue('baudRate', port.suggestedBaudRate);
                       }}
                     >
-                      Use
+                      {t('Use')}
                     </button>
                   </div>
                 </li>
@@ -382,20 +384,20 @@ export function CoordinatorPage() {
 
         <Card className="xl:col-span-2">
           <CardHeader
-            title="Configuration"
+            title={t('Configuration')}
             subtitle="Written to Zigbee2MQTT via bridge/request/options"
           />
           <form
             className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
             onSubmit={form.handleSubmit((values) => save.mutate(values))}
           >
-            <Field label="Serial Port">
+            <Field label={t('Serial Port')}>
               <input className="input" {...form.register('serialPort')} placeholder="COM3 or /dev/ttyUSB0" />
             </Field>
-            <Field label="Baud Rate">
+            <Field label={t('Baud Rate')}>
               <input className="input" type="number" {...form.register('baudRate', { valueAsNumber: true })} />
             </Field>
-            <Field label="Adapter">
+            <Field label={t('Adapter')}>
               <select className="input" {...form.register('adapter')}>
                 <option value="zstack">zstack (CC2652P)</option>
                 <option value="ember">ember (EFR32MG21)</option>
@@ -407,20 +409,20 @@ export function CoordinatorPage() {
             <Field label="PAN ID">
               <input className="input" type="number" {...form.register('panId')} />
             </Field>
-            <Field label="Channel (11-26)">
+            <Field label={`${t('Channel')} (11-26)`}>
               <input className="input" type="number" min={11} max={26} {...form.register('channel')} />
             </Field>
-            <Field label="Extended PAN ID">
+            <Field label={t('Extended PAN ID')}>
               <input className="input" {...form.register('extendedPanId')} placeholder="DDDDDDDDDDDDDDDD" />
             </Field>
-            <Field label="Network Key">
+            <Field label={t('Network Key')}>
               <input
                 className="input"
                 {...form.register('networkKey')}
                 placeholder="leave blank to keep / GENERATE for random"
               />
             </Field>
-            <Field label="Log Level">
+            <Field label={t('Log Level')}>
               <select className="input" {...form.register('logLevel')}>
                 <option value="debug">debug</option>
                 <option value="info">info</option>
@@ -432,11 +434,11 @@ export function CoordinatorPage() {
             <div className="flex items-end gap-2 sm:col-span-2 lg:col-span-3">
               <button type="submit" className="btn-primary" disabled={save.isPending}>
                 {save.isPending ? <Spinner /> : null}
-                Save settings
+                {t('Save settings')}
               </button>
               {save.isSuccess ? (
                 <p className="text-sm text-success">
-                  Saved
+                  {t('Saved')}
                   {save.data?.warnings?.length
                     ? ` — ${(save.data.warnings as string[]).join(' · ')}`
                     : ''}

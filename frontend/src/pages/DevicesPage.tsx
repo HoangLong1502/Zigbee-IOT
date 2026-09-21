@@ -6,8 +6,10 @@ import { devicesApi } from '@/lib/api';
 import { batteryColor, formatRelative, linkQualityInfo } from '@/lib/utils';
 import { Badge, EmptyState, PageHeader, Spinner } from '@/components/ui/Card';
 import { DeviceOnOffToggle } from '@/components/devices/DeviceOnOffToggle';
+import { useLanguage } from '@/context/LanguageContext';
 
 export function DevicesPage() {
+  const { t } = useLanguage();
   const [search, setSearch] = useState('');
   const [onlineOnly, setOnlineOnly] = useState(false);
   const [type, setType] = useState('');
@@ -38,8 +40,8 @@ export function DevicesPage() {
   return (
     <div>
       <PageHeader
-        title="Devices"
-        description={`${data?.total ?? 0} discovered on the Zigbee network`}
+        title={t('Devices')}
+        description={`${data?.total ?? 0} ${t('discovered on the Zigbee network')}`}
       />
 
       <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -47,7 +49,7 @@ export function DevicesPage() {
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
           <input
             className="input pl-9"
-            placeholder="Search by name, model, manufacturer or IEEE…"
+            placeholder={t('Search by name, model, manufacturer or IEEE…')}
             value={search}
             onChange={(event) => setSearch(event.target.value)}
           />
@@ -57,10 +59,10 @@ export function DevicesPage() {
           value={type}
           onChange={(event) => setType(event.target.value)}
         >
-          <option value="">All types</option>
-          <option value="Router">Routers</option>
-          <option value="EndDevice">End devices</option>
-          <option value="Coordinator">Coordinator</option>
+          <option value="">{t('All types')}</option>
+          <option value="Router">{t('Routers')}</option>
+          <option value="EndDevice">{t('End devices')}</option>
+          <option value="Coordinator">{t('Coordinator')}</option>
         </select>
         <label className="flex items-center gap-2 text-sm text-slate-300">
           <input
@@ -68,7 +70,7 @@ export function DevicesPage() {
             checked={onlineOnly}
             onChange={(event) => setOnlineOnly(event.target.checked)}
           />
-          Online only
+          {t('Online only')}
         </label>
       </div>
 
@@ -78,8 +80,8 @@ export function DevicesPage() {
         </div>
       ) : grouped.length === 0 ? (
         <EmptyState
-          title="No devices found"
-          description="Open permit join on the Coordinator page and put your device into pairing mode."
+          title={t('No devices found')}
+          description={t('Open permit join on the Coordinator page and put your device into pairing mode.')}
         />
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
@@ -115,14 +117,14 @@ export function DevicesPage() {
                       {device.friendlyName}
                     </p>
                     <p className="truncate text-xs text-slate-500">
-                      {device.manufacturer ?? 'Unknown'} · {device.model ?? '—'}
+                      {device.manufacturer ?? t('Unknown')} · {device.model ?? '—'}
                     </p>
                     <div className="mt-2 flex flex-wrap gap-1.5">
                       {device.pairingConfirmed === false ? (
-                        <Badge tone="warning">Awaiting pair</Badge>
+                        <Badge tone="warning">{t('Awaiting pair')}</Badge>
                       ) : null}
                       <Badge tone={device.online ? 'success' : 'default'}>
-                        {device.online ? 'Online' : 'Offline'}
+                        {device.online ? t('Online') : t('Offline')}
                       </Badge>
                       {typeof device.battery === 'number' ? (
                         <Badge>
@@ -137,7 +139,7 @@ export function DevicesPage() {
                   </div>
                 </div>
                 <p className="mt-3 truncate font-mono text-[11px] text-slate-500">
-                  {device.ieeeAddress} · seen {formatRelative(device.lastSeen)}
+                  {device.ieeeAddress} · {t('seen')} {formatRelative(device.lastSeen)}
                 </p>
               </Link>
             );

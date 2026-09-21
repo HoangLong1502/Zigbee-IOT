@@ -7,6 +7,7 @@ import { WS_EVENTS } from '@/lib/ws-events';
 import { formatRelative, linkQualityInfo } from '@/lib/utils';
 import { Badge, Spinner } from '@/components/ui/Card';
 import type { PairingPrompt } from '@/types';
+import { useLanguage } from '@/context/LanguageContext';
 
 type PairingDecision = PairingPrompt & { decision?: 'accept' | 'reject' | 'left' };
 
@@ -15,6 +16,7 @@ type PairingDecision = PairingPrompt & { decision?: 'accept' | 'reject' | 'left'
  * coordinator, ask whether to keep it on the network.
  */
 export function PairingPromptModal() {
+  const { t } = useLanguage();
   const queryClient = useQueryClient();
   const [error, setError] = useState<string | null>(null);
 
@@ -89,8 +91,8 @@ export function PairingPromptModal() {
   const identity = useMemo(() => {
     if (!current) return '';
     const parts = [current.manufacturer, current.model].filter(Boolean);
-    return parts.join(' · ') || 'Interviewing device…';
-  }, [current]);
+    return parts.join(' · ') || t('Interviewing device…');
+  }, [current, t]);
 
   if (!current) return null;
 
@@ -110,18 +112,18 @@ export function PairingPromptModal() {
             </div>
             <div>
               <p id="pairing-prompt-title" className="text-base font-semibold text-ink">
-                Nearby Zigbee device
+                {t('Nearby Zigbee device')}
               </p>
               <p className="text-xs text-slate-400">
-                Pair it with this coordinator?
-                {remaining > 0 ? ` · ${remaining} more waiting` : ''}
+                {t('Pair it with this coordinator?')}
+                {remaining > 0 ? ` · ${remaining} ${t('more waiting')}` : ''}
               </p>
             </div>
           </div>
           <button
             type="button"
             className="rounded-lg p-1.5 text-slate-500 hover:bg-ink/10 hover:text-ink"
-            aria-label="Ask again later"
+            aria-label={t('Ask again later')}
             disabled={busy}
             onClick={() =>
               queryClient.setQueryData<PairingPrompt[]>(['pairing-prompts'], (currentList = []) => {
@@ -157,9 +159,9 @@ export function PairingPromptModal() {
 
         <div className="mb-4 flex flex-wrap gap-1.5">
           {current.nearCoordinator ? (
-            <Badge tone="success">Near coordinator</Badge>
+            <Badge tone="success">{t('Near coordinator')}</Badge>
           ) : (
-            <Badge>In radio range</Badge>
+            <Badge>{t('In radio range')}</Badge>
           )}
           <Badge tone={current.interviewStatus === 'successful' ? 'success' : 'warning'}>
             Interview {current.interviewStatus ?? 'pending'}
@@ -167,7 +169,7 @@ export function PairingPromptModal() {
           <Badge>
             <span className={lqi.color}>LQI {current.linkQuality ?? '—'}</span>
           </Badge>
-          <Badge>Seen {formatRelative(current.joinedAt)}</Badge>
+          <Badge>{t('Seen')} {formatRelative(current.joinedAt)}</Badge>
         </div>
 
         <p className="mb-4 text-sm text-slate-400">
@@ -185,11 +187,11 @@ export function PairingPromptModal() {
             onClick={onReject}
           >
             {reject.isPending ? <Spinner /> : <X className="h-4 w-4" />}
-            Don&apos;t pair
+            {t('Don’t pair')}
           </button>
           <button type="button" className="btn-primary" disabled={busy} onClick={onAccept}>
             {accept.isPending ? <Spinner /> : <ShieldCheck className="h-4 w-4" />}
-            Pair
+            {t('Pair')}
           </button>
         </div>
       </div>

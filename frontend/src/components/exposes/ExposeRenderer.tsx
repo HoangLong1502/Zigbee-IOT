@@ -27,6 +27,7 @@ import {
 import type { DeviceExpose } from '@/types';
 import { cn, humanizeProperty } from '@/lib/utils';
 import { Badge } from '@/components/ui/Card';
+import { useLanguage } from '@/context/LanguageContext';
 
 const ACCESS_SET = 0b010;
 const ACCESS_GET = 0b100;
@@ -68,13 +69,14 @@ export function ExposeRenderer({
   compact = false,
   className,
 }: ExposeRendererProps) {
+  const { t } = useLanguage();
   const [configOpen, setConfigOpen] = useState(false);
   const { primary, config } = useMemo(() => splitPrimaryAndConfig(exposes), [exposes]);
 
   if (primary.length === 0 && config.length === 0) {
     return (
       <p className="text-sm text-slate-400">
-        No exposes reported yet. Wait for the device interview to complete.
+        {t('No exposes reported yet. Wait for the device interview to complete.')}
       </p>
     );
   }
@@ -95,7 +97,7 @@ export function ExposeRenderer({
           >
             <span className="inline-flex items-center gap-2 text-sm font-medium text-slate-200">
               <Settings2 className="h-4 w-4 text-accent-soft" />
-              Config
+              {t('Config')}
               <Badge>{configItemCount(config)}</Badge>
             </span>
             <ChevronDown
@@ -277,6 +279,7 @@ function ExposeGroupCard({
   onSet?: (property: string, value: unknown) => Promise<void> | void;
   compact: boolean;
 }) {
+  const { t } = useLanguage();
   const features = [...group.features].sort((a, b) =>
     a.property.localeCompare(b.property),
   );
@@ -302,7 +305,7 @@ function ExposeGroupCard({
             </p>
           ) : null}
         </div>
-        <Badge tone="accent">settings</Badge>
+        <Badge tone="accent">{t('settings')}</Badge>
       </div>
 
       <div
@@ -422,6 +425,7 @@ function BinaryControl({
   settable: boolean;
   onSet?: (property: string, value: unknown) => Promise<void> | void;
 }) {
+  const { t } = useLanguage();
   const onValue = expose.valueOn ?? 'ON';
   const offValue = expose.valueOff ?? 'OFF';
   const text = String(value ?? '').toLowerCase();
@@ -449,7 +453,7 @@ function BinaryControl({
         isOn ? 'bg-accent' : 'bg-ink/10',
       )}
       onClick={() => void onSet(expose.property, isOn ? offValue : onValue)}
-      aria-label={`Toggle ${expose.property}`}
+      aria-label={t('Toggle {property}', { property: expose.property })}
     >
       <span
         className={cn(
@@ -525,6 +529,7 @@ function EnumControl({
   settable: boolean;
   onSet?: (property: string, value: unknown) => Promise<void> | void;
 }) {
+  const { t } = useLanguage();
   const options = expose.values ?? [];
 
   if (!settable || !onSet) {
@@ -538,7 +543,7 @@ function EnumControl({
       onChange={(event) => void onSet(expose.property, event.target.value)}
     >
       <option value="" disabled>
-        Select…
+        {t('Select…')}
       </option>
       {options.map((option) => (
         <option key={String(option)} value={String(option)}>
@@ -560,6 +565,7 @@ function TextControl({
   settable: boolean;
   onSet?: (property: string, value: unknown) => Promise<void> | void;
 }) {
+  const { t } = useLanguage();
   const [draft, setDraft] = useState(String(value ?? ''));
 
   if (!settable || !onSet) {
@@ -578,7 +584,7 @@ function TextControl({
     >
       <input className="input" value={draft} onChange={(event) => setDraft(event.target.value)} />
       <button type="submit" className="btn-secondary">
-        Set
+        {t('Set')}
       </button>
     </form>
   );
